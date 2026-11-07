@@ -5,6 +5,15 @@ import {IFirewallModule} from "./interfaces/IFirewallModule.sol";
 import {IMarketAdapter} from "./interfaces/IMarketAdapter.sol";
 import {IERC7579Account, IModule, MODULE_TYPE_EXECUTOR, CALLTYPE_SINGLE} from "./interfaces/IERC7579.sol";
 import {RiskBudget} from "./lib/RiskBudget.sol";
+import {
+    ISmartSessions,
+    SSSession,
+    SSPolicyData,
+    SSActionData,
+    SSERC7739Data,
+    SS_FALLBACK_TARGET,
+    SS_FALLBACK_SELECTOR
+} from "./interfaces/ISmartSessions.sol";
 
 /// @title FirewallModule
 /// @notice ERC-7579 executor holding each account's firewall config, the 24-hour change queue,
@@ -18,6 +27,7 @@ contract FirewallModule is IFirewallModule, IModule {
     uint256 public constant MAX_TOKENS = 4;
     uint256 public constant MAX_DESTINATIONS = 8;
     uint256 public constant MAX_MARKETS = 4;
+    uint48 public constant MAX_SESSION_DURATION = 30 days;
 
     struct AccountState {
         Config config;
@@ -36,17 +46,27 @@ contract FirewallModule is IFirewallModule, IModule {
     }
 
     address public immutable HOOK;
+    ISmartSessions public immutable SMART_SESSIONS;
+    address public immutable ACTION_POLICY;
+    address public immutable SIGNATURE_POLICY;
 
     mapping(address account => AccountState) internal _state;
     // keyed id-first so the account is the inner key (associated storage)
     mapping(bytes32 id => mapping(address account => Change)) internal _changes;
 
-    /// @dev Set only while execute() runs a matured ConfigCall for this account.
+    /// @dev Set only while this module runs a call it built itself on the account: a matured ConfigCall,
+    ///      or a session create/remove. The hook lets exactly those executions through.
     address internal transient _configCallAccount;
 
-    constructor(address hook) {
-        if (hook == address(0)) revert ZeroAddress();
+    constructor(address hook, ISmartSessions smartSessions, address actionPolicy, address signaturePolicy) {
+        if (
+            hook == address(0) || address(smartSessions) == address(0) || actionPolicy == address(0)
+                || signaturePolicy == address(0)
+        ) revert ZeroAddress();
         HOOK = hook;
+        SMART_SESSIONS = smartSessions;
+        ACTION_POLICY = actionPolicy;
+        SIGNATURE_POLICY = signaturePolicy;
     }
 
     modifier onlyInitialized() {
@@ -239,6 +259,74 @@ contract FirewallModule is IFirewallModule, IModule {
         emit ChangeCancelled(msg.sender, id);
     }
 
+    // ---------------------------------------------------------------- sessions
+
+    /// @notice Create a session the firewall fully controls. The module builds the Smart Sessions config
+    ///         itself: one fallback action policy (FirewallActionPolicy) covering every call, ERC-1271 locked
+    ///         by NoSignaturePolicy with no allowed ERC-7739 content, and an expiry. No free-form session
+    ///         config is ever signed, so a session can never be granted signing or extra targets.
+    /// @dev Instant: everything a session can do is already bounded by the hook (R1-R5) and the budget.
+    function createSession(
+        address sessionValidator,
+        bytes calldata sessionValidatorInitData,
+        bytes32 salt,
+        uint48 validUntil
+    ) external onlyInitialized returns (bytes32 permissionId) {
+        if (_state[msg.sender].config.frozen) revert Frozen();
+        if (sessionValidator == address(0)) revert ZeroAddress();
+        if (validUntil <= block.timestamp || validUntil > block.timestamp + MAX_SESSION_DURATION) {
+            revert InvalidExpiry();
+        }
+
+        SSSession[] memory sessions = new SSSession[](1);
+        sessions[0] = _buildSession(sessionValidator, sessionValidatorInitData, salt, validUntil);
+        bytes[] memory ret = _runOnAccount(
+            address(SMART_SESSIONS), 0, abi.encodeCall(ISmartSessions.enableSessions, (sessions))
+        );
+        permissionId = abi.decode(ret[0], (bytes32[]))[0];
+        emit SessionCreated(msg.sender, permissionId, sessionValidator, validUntil);
+    }
+
+    /// @notice Tightening: remove one session at once. revokeSessions() / freeze() kill all of them.
+    function removeSession(bytes32 permissionId) external onlyInitialized {
+        _runOnAccount(address(SMART_SESSIONS), 0, abi.encodeCall(ISmartSessions.removeSession, (permissionId)));
+        emit SessionRemoved(msg.sender, permissionId);
+    }
+
+    function buildSession(
+        address sessionValidator,
+        bytes calldata sessionValidatorInitData,
+        bytes32 salt,
+        uint48 validUntil
+    ) external view returns (SSSession memory) {
+        return _buildSession(sessionValidator, sessionValidatorInitData, salt, validUntil);
+    }
+
+    function _buildSession(
+        address sessionValidator,
+        bytes calldata sessionValidatorInitData,
+        bytes32 salt,
+        uint48 validUntil
+    ) internal view returns (SSSession memory s) {
+        SSPolicyData[] memory actionPolicies = new SSPolicyData[](1);
+        actionPolicies[0] = SSPolicyData({policy: ACTION_POLICY, initData: abi.encode(validUntil)});
+        SSActionData[] memory actions = new SSActionData[](1);
+        actions[0] = SSActionData({
+            actionTargetSelector: SS_FALLBACK_SELECTOR,
+            actionTarget: SS_FALLBACK_TARGET,
+            actionPolicies: actionPolicies
+        });
+        SSPolicyData[] memory sigPolicies = new SSPolicyData[](1);
+        sigPolicies[0] = SSPolicyData({policy: SIGNATURE_POLICY, initData: ""});
+
+        s.sessionValidator = sessionValidator;
+        s.sessionValidatorInitData = sessionValidatorInitData;
+        s.salt = salt;
+        s.userOpPolicies = new SSPolicyData[](0);
+        s.erc7739Policies = SSERC7739Data({allowedERC7739Content: new string[](0), erc1271Policies: sigPolicies});
+        s.actions = actions;
+    }
+
     // ---------------------------------------------------------------- tightening: instant
 
     function removeDestination(address dest) external override onlyInitialized {
@@ -300,6 +388,18 @@ contract FirewallModule is IFirewallModule, IModule {
     }
 
     // ---------------------------------------------------------------- internals
+
+    function _runOnAccount(address target, uint256 value, bytes memory callData)
+        internal
+        returns (bytes[] memory ret)
+    {
+        address previous = _configCallAccount;
+        _configCallAccount = msg.sender;
+        ret = IERC7579Account(msg.sender).executeFromExecutor(
+            bytes32(CALLTYPE_SINGLE), abi.encodePacked(target, value, callData)
+        );
+        _configCallAccount = previous;
+    }
 
     function _precheckChange(AccountState storage s, ChangeKind kind, bytes calldata data) internal view {
         if (kind == ChangeKind.AddDestination || kind == ChangeKind.AddToken) {

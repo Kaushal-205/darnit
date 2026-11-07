@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {Test} from "forge-std/Test.sol";
+import {FirewallDeploy} from "../utils/FirewallDeploy.sol";
 import {
     RhinestoneModuleKit,
     AccountInstance,
@@ -15,7 +15,8 @@ import {
     PolicyData,
     ActionData,
     ERC7739Data,
-    ISessionValidator
+    ISessionValidator,
+    PermissionId
 } from "modulekit/integrations/interfaces/ISmartSession.sol";
 
 import {FirewallModule} from "../../src/FirewallModule.sol";
@@ -34,7 +35,7 @@ import {ReferenceMarket, OutcomeShares} from "../fixtures/ReferenceMarket.sol";
 
 /// @notice M0 acceptance: a real Safe + Safe7579 account with Smart Sessions and the firewall hook
 ///         executes one session user operation, and the hook blocks session attacks on the same path.
-contract SafeSmartSessionTest is RhinestoneModuleKit, Test {
+contract SafeSmartSessionTest is RhinestoneModuleKit, FirewallDeploy {
     using ModuleKitHelpers for AccountInstance;
     using ModuleKitHelpers for UserOpData;
 
@@ -68,9 +69,8 @@ contract SafeSmartSessionTest is RhinestoneModuleKit, Test {
         allowAll = new MockPolicy();
         allowAll.setValidationData(instance.account, 0);
 
-        address predicted = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
-        hook = new FirewallHook(IFirewallModule(predicted));
-        module = new FirewallModule(address(hook));
+        Firewall memory f = _deployFirewall(address(instance.smartSession));
+        (hook, module) = (f.hook, f.module);
 
         uint256 marketId = market.createMarket("Will it rain tomorrow?");
         (yesId,) = market.outcomeIds(marketId);
@@ -146,7 +146,180 @@ contract SafeSmartSessionTest is RhinestoneModuleKit, Test {
         instance.installModule(MODULE_TYPE_EXECUTOR, attacker, "");
     }
 
+    // ================================================================ M2: firewall-built sessions
+
+    /// The module builds and enables the session (no free-form session config is ever signed).
+    function test_M2_createSessionViaModule() public {
+        Session memory s = _createFirewallSession();
+        assertTrue(instance.smartSession.isPermissionEnabled(instance.smartSession.getPermissionId(s), instance.account));
+    }
+
+    /// C2 from a firewall session.
+    function test_M2_C2_sessionFill() public {
+        Session memory s = _createFirewallSession();
+        instance.useSession(s, address(market), 0, _buyCall(100e6));
+        assertEq(shares.balanceOf(instance.account, yesId), 100e6);
+        assertEq(module.availableBudget(instance.account), CAP - 50e6);
+    }
+
+    function test_M2_A1_sessionTransferToAttacker() public {
+        Session memory s = _createFirewallSession();
+        instance.expect4337Revert(abi.encodeWithSelector(FirewallErrors.UnexplainedOutflow.selector, address(usdc), 0));
+        instance.useSession(s, address(usdc), 0, abi.encodeCall(usdc.transfer, (attacker, 1e6)));
+    }
+
+    function test_M2_A2_sessionApproveAttacker() public {
+        Session memory s = _createFirewallSession();
+        instance.expect4337Revert(abi.encodeWithSelector(FirewallErrors.UnregisteredSpender.selector, attacker));
+        instance.useSession(s, address(usdc), 0, abi.encodeCall(usdc.approve, (attacker, type(uint256).max)));
+    }
+
+    function test_M2_A3_sessionSetApprovalForAllAttacker() public {
+        Session memory s = _createFirewallSession();
+        instance.expect4337Revert(abi.encodeWithSelector(FirewallErrors.UnregisteredSpender.selector, attacker));
+        instance.useSession(s, address(shares), 0, abi.encodeCall(shares.setApprovalForAll, (attacker, true)));
+    }
+
+    /// A4: rejected at validation by FirewallActionPolicy (unknown target), before the hook is reached.
+    function test_M2_A4_sessionCallsUnknownContract() public {
+        Session memory s = _createFirewallSession();
+        instance.expect4337Revert();
+        instance.useSession(s, attacker, 0, hex"12345678");
+    }
+
+    function test_M2_A5_sessionProceedsToAttacker() public {
+        Session memory s = _createFirewallSession();
+        bytes memory data = _fillCallTo(IReferenceMarket.Side.Sell, 0.5e6, 100e6, attacker);
+        instance.expect4337Revert(abi.encodeWithSelector(FirewallErrors.UnexplainedOutflow.selector, address(market), 0));
+        instance.useSession(s, address(market), 0, data);
+    }
+
+    function test_M2_A6_sessionDumpsSharesBeyondBudget() public {
+        Session memory s = _createFirewallSession();
+        vm.prank(maker);
+        shares.safeTransferFrom(maker, instance.account, yesId, 2_000e6, "");
+        instance.exec(address(shares), abi.encodeCall(shares.setApprovalForAll, (address(market), true)));
+        bytes memory data = _fillCallTo(IReferenceMarket.Side.Buy, 0.01e6, 2_000e6, instance.account);
+        instance.expect4337Revert(abi.encodeWithSelector(FirewallErrors.BudgetExceeded.selector, 1_980e6, uint256(CAP)));
+        instance.useSession(s, address(market), 0, data);
+    }
+
+    function test_M2_A7_sessionBuysPastCap() public {
+        Session memory s = _createFirewallSession();
+        for (uint256 i; i < 5; ++i) {
+            instance.useSession(s, address(market), 0, _buyCall(400e6)); // $200 each
+        }
+        instance.expect4337Revert(abi.encodeWithSelector(FirewallErrors.BudgetExceeded.selector, 200e6, 0));
+        instance.useSession(s, address(market), 0, _buyCall(400e6));
+    }
+
+    /// A9: a session cannot reach the account itself, the module, or Smart Sessions (validation rejects).
+    function test_M2_A9_sessionSelfCall() public {
+        Session memory s = _createFirewallSession();
+        instance.expect4337Revert();
+        instance.useSession(s, instance.account, 0, abi.encodeWithSignature("installModule(uint256,address,bytes)", 2, attacker, ""));
+    }
+
+    function test_M2_A9_sessionCannotQueueChanges() public {
+        Session memory s = _createFirewallSession();
+        instance.expect4337Revert();
+        instance.useSession(
+            s,
+            address(module),
+            0,
+            abi.encodeCall(module.queue, (IFirewallModule.ChangeKind.AddDestination, abi.encode(attacker)))
+        );
+    }
+
+    function test_M2_A9_sessionCannotFreezeOrRevoke() public {
+        Session memory s = _createFirewallSession();
+        instance.expect4337Revert();
+        instance.useSession(s, address(module), 0, abi.encodeCall(module.removeDestination, (dest)));
+    }
+
+    /// A11: the session key cannot produce an account signature (no ERC-7739 content, NoSignaturePolicy).
+    function test_M2_A11_sessionCannotSign() public {
+        Session memory s = _createFirewallSession();
+        bytes32 permissionId = PermissionId.unwrap(instance.smartSession.getPermissionId(s));
+        bytes32 hash = keccak256("permit to attacker");
+        bytes memory sig = abi.encodePacked(address(instance.smartSession), permissionId, bytes("anything"));
+        (bool ok, bytes memory ret) =
+            instance.account.staticcall(abi.encodeWithSignature("isValidSignature(bytes32,bytes)", hash, sig));
+        assertTrue(!ok || bytes4(ret) != bytes4(0x1626ba7e), "session produced a valid ERC-1271 signature");
+    }
+
+    /// A12: after freeze the session is dead at validation (epoch bumped, frozen).
+    function test_M2_A12_sessionAfterFreeze() public {
+        Session memory s = _createFirewallSession();
+        instance.exec(address(module), abi.encodeCall(module.freeze, ()));
+        instance.expect4337Revert();
+        instance.useSession(s, address(market), 0, _buyCall(10e6));
+    }
+
+    function test_M2_sessionAfterRevoke() public {
+        Session memory s = _createFirewallSession();
+        instance.exec(address(module), abi.encodeCall(module.revokeSessions, ()));
+        instance.expect4337Revert();
+        instance.useSession(s, address(market), 0, _buyCall(10e6));
+    }
+
+    function test_M2_sessionAfterRemove() public {
+        Session memory s = _createFirewallSession();
+        bytes32 permissionId = PermissionId.unwrap(instance.smartSession.getPermissionId(s));
+        instance.exec(address(module), abi.encodeCall(module.removeSession, (permissionId)));
+        assertFalse(instance.smartSession.isPermissionEnabled(PermissionId.wrap(permissionId), instance.account));
+    }
+
+    function test_M2_sessionExpires() public {
+        Session memory s = _createFirewallSession();
+        vm.warp(block.timestamp + 7 days + 1);
+        instance.expect4337Revert();
+        instance.useSession(s, address(market), 0, _buyCall(10e6));
+    }
+
+    /// Owner cannot enable an arbitrary session by calling Smart Sessions directly: the hook refuses.
+    function test_M2_ownerCannotEnableSessionDirectly() public {
+        Session[] memory sessions = new Session[](1);
+        sessions[0] = _session(address(usdc), usdc.transfer.selector);
+        instance.expect4337Revert(
+            abi.encodeWithSelector(
+                FirewallErrors.UnknownTarget.selector, address(instance.smartSession), bytes4(keccak256("enableSessions((address,bytes,bytes32,(address,bytes)[],(string[],(address,bytes)[]),(bytes4,address,(address,bytes)[])[])[])"))
+            )
+        );
+        instance.exec(address(instance.smartSession), abi.encodeWithSignature(
+            "enableSessions((address,bytes,bytes32,(address,bytes)[],(string[],(address,bytes)[]),(bytes4,address,(address,bytes)[])[])[])", sessions
+        ));
+    }
+
     // ---------------------------------------------------------------- helpers
+
+    function _createFirewallSession() internal returns (Session memory s) {
+        uint48 validUntil = uint48(block.timestamp + 7 days);
+        bytes32 sessionSalt = keccak256(abi.encode("session", ++salt));
+        address validator = address(instance.defaultSessionValidator);
+        instance.exec(
+            address(module), abi.encodeCall(module.createSession, (validator, "mockInitData", sessionSalt, validUntil))
+        );
+        // our SSSession and ModuleKit's Session share one ABI
+        s = abi.decode(abi.encode(module.buildSession(validator, "mockInitData", sessionSalt, validUntil)), (Session));
+    }
+
+    function _fillCallTo(IReferenceMarket.Side side, uint256 price, uint256 amount, address recipient)
+        internal
+        returns (bytes memory)
+    {
+        IReferenceMarket.Order memory o = IReferenceMarket.Order({
+            maker: maker,
+            tokenId: yesId,
+            side: side,
+            price: price,
+            amount: amount,
+            expiry: block.timestamp + 30 days,
+            salt: ++salt
+        });
+        (uint8 v, bytes32 r, bytes32 sg) = vm.sign(makerKey, market.hashOrder(o));
+        return abi.encodeCall(market.fill, (o, abi.encodePacked(r, sg, v), amount, recipient));
+    }
 
     function _moduleInit() internal view returns (bytes memory) {
         address[] memory tokens = new address[](1);
@@ -187,7 +360,7 @@ contract SafeSmartSessionTest is RhinestoneModuleKit, Test {
             side: IReferenceMarket.Side.Sell,
             price: 0.5e6,
             amount: amount,
-            expiry: block.timestamp + 1 days,
+            expiry: block.timestamp + 30 days,
             salt: ++salt
         });
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(makerKey, market.hashOrder(o));

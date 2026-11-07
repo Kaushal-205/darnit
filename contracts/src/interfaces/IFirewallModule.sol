@@ -46,6 +46,8 @@ interface IFirewallModule is FirewallErrors {
     event CapLowered(address indexed account, uint128 newCap);
     event SessionsRevoked(address indexed account, uint64 epoch);
     event FreezeActivated(address indexed account);
+    event SessionCreated(address indexed account, bytes32 indexed permissionId, address sessionValidator, uint48 validUntil);
+    event SessionRemoved(address indexed account, bytes32 indexed permissionId);
 
     // reads
     function isDestination(address account, address dest) external view returns (bool);
@@ -71,4 +73,13 @@ interface IFirewallModule is FirewallErrors {
     function lowerCap(uint128 newCap) external;
     function revokeSessions() external;
     function freeze() external;
+
+    // sessions
+    function createSession(
+        address sessionValidator,
+        bytes calldata sessionValidatorInitData,
+        bytes32 salt,
+        uint48 validUntil
+    ) external returns (bytes32 permissionId);
+    function removeSession(bytes32 permissionId) external;
 }

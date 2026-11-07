@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {Test} from "forge-std/Test.sol";
 import {FirewallModule} from "../src/FirewallModule.sol";
 import {FirewallHook} from "../src/FirewallHook.sol";
 import {ReferenceMarketAdapter} from "../src/adapters/ReferenceMarketAdapter.sol";
@@ -12,10 +11,14 @@ import {Execution, MODULE_TYPE_EXECUTOR, MODULE_TYPE_HOOK} from "../src/interfac
 import {MockUSDC} from "./fixtures/MockUSDC.sol";
 import {ReferenceMarket, OutcomeShares} from "./fixtures/ReferenceMarket.sol";
 import {MockAccount} from "./mocks/MockAccount.sol";
+import {MockSmartSessions} from "./mocks/MockSmartSessions.sol";
+import {FirewallDeploy} from "./utils/FirewallDeploy.sol";
+import {FirewallActionPolicy} from "../src/policies/FirewallActionPolicy.sol";
+import {NoSignaturePolicy} from "../src/policies/NoSignaturePolicy.sol";
 
 /// @notice Shared deployment and helpers. "Owner" executions arrive through the EntryPoint address,
 ///         exactly where a passkey-signed user operation would; the hook treats every signer alike.
-abstract contract Base is Test {
+abstract contract Base is FirewallDeploy {
     uint128 internal constant CAP = 1_000e6; // $1,000 per hour
     uint256 internal constant START_USDC = 10_000e6;
     uint256 internal constant ONE = 1e6;
@@ -31,6 +34,9 @@ abstract contract Base is Test {
     FirewallHook internal hook;
     FirewallModule internal module;
     MockAccount internal account;
+    MockSmartSessions internal smartSessions;
+    FirewallActionPolicy internal actionPolicy;
+    NoSignaturePolicy internal signaturePolicy;
 
     address internal entryPoint = makeAddr("entryPoint");
     address internal dest = makeAddr("destination");
@@ -50,11 +56,9 @@ abstract contract Base is Test {
         shares = OutcomeShares(market.shares());
         adapter = new ReferenceMarketAdapter(market);
 
-        // hook and module reference each other immutably: deploy the hook against the predicted module address
-        address predicted = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
-        hook = new FirewallHook(IFirewallModule(predicted));
-        module = new FirewallModule(address(hook));
-        assertEq(address(module), predicted, "module address prediction");
+        smartSessions = new MockSmartSessions();
+        Firewall memory f = _deployFirewall(address(smartSessions));
+        (hook, module, actionPolicy, signaturePolicy) = (f.hook, f.module, f.actionPolicy, f.signaturePolicy);
 
         account = _newAccount(address(adapter));
 

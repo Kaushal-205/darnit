@@ -26,4 +26,5 @@ interface FirewallErrors {
     error TooMany();
     error InvalidEntry(address entry);
     error ZeroAddress();
+    error InvalidExpiry();
 }

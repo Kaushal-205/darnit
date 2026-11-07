@@ -175,6 +175,7 @@ contract FirewallHook is IHook, FirewallErrors {
                 || sel == IFirewallModule.removeDestination.selector
                 || sel == IFirewallModule.removeMarket.selector || sel == IFirewallModule.lowerCap.selector
                 || sel == IFirewallModule.revokeSessions.selector || sel == IFirewallModule.freeze.selector
+                || sel == IFirewallModule.createSession.selector || sel == IFirewallModule.removeSession.selector
         ) return;
         revert UnknownTarget(address(MODULE), sel);
     }
