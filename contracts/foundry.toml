@@ -5,7 +5,7 @@ script = "script"
 out = "out"
 libs = ["lib", "../node_modules"]
 allow_paths = ["../node_modules"]
-fs_permissions = [{ access = "read-write", path = "gas_calculations" }]
+fs_permissions = [{ access = "read-write", path = "gas_calculations" }, { access = "read-write", path = "deployments" }]
 gas_limit = "18446744073709551615"
 memory_limit = 2147483648
 solc_version = "0.8.28"
