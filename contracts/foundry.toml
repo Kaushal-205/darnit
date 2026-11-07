@@ -1,0 +1,32 @@
+[profile.default]
+src = "src"
+test = "test"
+script = "script"
+out = "out"
+libs = ["lib", "../node_modules"]
+allow_paths = ["../node_modules"]
+fs_permissions = [{ access = "read-write", path = "gas_calculations" }]
+gas_limit = "18446744073709551615"
+memory_limit = 2147483648
+solc_version = "0.8.28"
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 10_000
+via_ir = false
+
+[fuzz]
+runs = 1_000
+
+[invariant]
+runs = 256
+depth = 64
+fail_on_revert = false
+
+[profile.ci.fuzz]
+runs = 10_000
+
+[fmt]
+line_length = 110
+
+[lint]
+lint_on_build = false

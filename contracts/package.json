@@ -1,0 +1,8 @@
+{
+  "name": "@session-firewall/contracts",
+  "private": true,
+  "license": "MIT",
+  "devDependencies": {
+    "@rhinestone/modulekit": "0.5.9"
+  }
+}

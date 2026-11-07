@@ -1,0 +1,12 @@
+forge-std/=lib/forge-std/src/
+@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
+modulekit/=../node_modules/@rhinestone/modulekit/src/
+erc4337-validation/=../node_modules/@rhinestone/erc4337-validation/src/
+@ERC4337/=../node_modules/@ERC4337/
+account-abstraction/=../node_modules/@ERC4337/account-abstraction/contracts/
+account-abstraction-v0.6/=../node_modules/@ERC4337/account-abstraction-v0.6/contracts/
+ds-test/=../node_modules/ds-test/src/
+solady/=../node_modules/solady/src/
+solarray/=../node_modules/solarray/src/
+@prb/math/=../node_modules/@prb/math/src/
+ExcessivelySafeCall/=../node_modules/excessively-safe-call/src/

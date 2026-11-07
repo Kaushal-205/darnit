@@ -1,0 +1,14 @@
+{
+  "name": "session-firewall",
+  "private": true,
+  "license": "MIT",
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "contracts:build": "cd contracts && forge build",
+    "contracts:test": "cd contracts && forge test -vvv",
+    "lint": "biome check ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4"
+  }
+}

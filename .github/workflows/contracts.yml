@@ -1,0 +1,36 @@
+name: contracts
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install ModuleKit (integration tests)
+        working-directory: .
+        run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts@v5.1.0 --no-git
+      - name: Build
+        run: forge build --sizes
+      - name: Test
+        run: forge test -vvv
+        env:
+          FOUNDRY_PROFILE: ci
+      - name: Gas snapshot
+        run: forge snapshot --check || forge snapshot
