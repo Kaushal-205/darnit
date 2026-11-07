@@ -1,6 +1,7 @@
 import {
   http,
   type Address,
+  type BaseError,
   type Hex,
   concat,
   createPublicClient,
@@ -12,6 +13,7 @@ import {
   keccak256,
   parseEther,
   stringToHex,
+  toFunctionSelector,
 } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -74,13 +76,35 @@ describe("V13: exact Smart Sessions ABI", () => {
       functionName: "enableSessions",
       args: [[]],
     });
-    const result = await client.call({ to: env.addresses.smartSessions, data });
-    expect(result.data).toBeDefined();
+    /** Raw revert data of `eth_call`; throws if the call does not revert. */
+    const revertData = async (to: Address, callData: Hex): Promise<string> => {
+      try {
+        await client.request({
+          method: "eth_call",
+          params: [{ to, data: callData }, "latest"],
+        });
+      } catch (e) {
+        const hit = (e as BaseError).walk(
+          (x) => typeof (x as { data?: unknown }).data === "string",
+        ) as unknown as { data?: string };
+        if (typeof hit.data === "string") return hit.data;
+        throw e;
+      }
+      throw new Error(`eth_call to ${to} did not revert`);
+    };
+    // An empty list is refused inside enableSessions with InvalidData(), which proves the selector
+    // dispatches on the matching build.
+    expect(await revertData(env.addresses.smartSessions, data)).toBe(
+      toFunctionSelector("InvalidData()"),
+    );
+    // The deployments have no such function: same bare revert as a selector nothing implements.
     for (const address of [
       ETHEREUM_SEPOLIA.smartSessionsCanonical,
       ETHEREUM_SEPOLIA.smartSessionsLegacy,
-    ])
-      await expect(client.call({ to: address, data })).rejects.toThrow();
+    ]) {
+      expect(await revertData(address, data)).toBe("0x");
+      expect(await revertData(address, "0xdeadbeef")).toBe("0x");
+    }
   });
 });
 
