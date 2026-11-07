@@ -56,6 +56,16 @@ interface IModule {
     function isInitialized(address smartAccount) external view returns (bool);
 }
 
+interface IValidator is IModule {
+    function validateUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash)
+        external
+        returns (uint256 validationData);
+    function isValidSignatureWithSender(address sender, bytes32 hash, bytes calldata signature)
+        external
+        view
+        returns (bytes4);
+}
+
 interface IHook is IModule {
     function preCheck(address msgSender, uint256 msgValue, bytes calldata msgData)
         external

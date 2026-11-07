@@ -2,7 +2,7 @@
 
 ERC-7579 modules that let a browser session key trade on a prediction market while the account can **never** send value to an unregistered address, approve an unknown spender, change its own config without a 24-hour delay, or lose more than an hourly USDC budget.
 
-> Status: **M0 + M1 done** (94 tests passing, including integration on real Safe7579 + Smart Sessions). M2 next. Nothing deployed. Not audited.
+> Status: **M0, M1 and M2 done** (199 tests passing, including integration on real Safe7579 + Smart Sessions). M3 next. Nothing deployed. Not audited.
 
 ## Layout
 
@@ -46,4 +46,4 @@ The optional monitor stores only account addresses and the contact details you g
 
 ## License
 
-MIT
+MIT, except `contracts/test/fixtures/Safe7579Head.sol`, which is GPL-3.0: it holds upstream Safe7579 bytecode, used only by tests and never deployed.

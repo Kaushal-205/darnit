@@ -45,6 +45,9 @@ importers:
 
   contracts:
     devDependencies:
+      '@openzeppelin/contracts-webauthn':
+        specifier: npm:@openzeppelin/contracts@5.6.1
+        version: '@openzeppelin/contracts@5.6.1'
       '@rhinestone/modulekit':
         specifier: 0.5.9
         version: 0.5.9(ethers@5.8.0)(hardhat@2.29.1(typescript@5.9.3))(lodash@4.18.1)(typechain@5.2.0(typescript@5.9.3))(typescript@5.9.3)
