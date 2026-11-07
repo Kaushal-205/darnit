@@ -8,3 +8,4 @@ contracts/lib/
 !.env.example
 dist/
 .next/
+.claude/worktrees/
