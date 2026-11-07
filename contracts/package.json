@@ -3,6 +3,7 @@
   "private": true,
   "license": "MIT",
   "devDependencies": {
+    "@openzeppelin/contracts-webauthn": "npm:@openzeppelin/contracts@5.6.1",
     "@rhinestone/modulekit": "0.5.9"
   }
 }

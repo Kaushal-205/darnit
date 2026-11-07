@@ -9,3 +9,4 @@ contracts/lib/
 dist/
 .next/
 contracts/deployments/31337*.json
+.claude/worktrees/
