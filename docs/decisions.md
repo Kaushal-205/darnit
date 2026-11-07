@@ -110,3 +110,19 @@ on the local fork. M7 still needs V13 resolved, funded deployment, a bundler and
 compromised client. RP-domain-bound passkeys mean saved-file/arbitrary-origin recovery cannot be
 claimed without a separately enrolled/tested recovery path. The three-minute browser video and
 tracker-free client bundle audit remain M5/M8 submission gates.
+
+## M6 monitor verification (2026-11-07)
+
+Implementation and runbook: `apps/monitor/README.md`. The opt-in indexer and worker cover queue,
+rolling 80% budget, blocked attempts, emergency hook uninstall, freeze and revocation. Subscription
+writes require account signatures, timestamp and single-use nonce; signed webhooks use per-account,
+per-URL secrets. Postgres persistence, retries and replay protection are covered by the unit suite.
+
+Local results: 85 unit tests and 5 process-level Anvil/Ponder/worker/webhook tests pass. Three queued
+changes were delivered in 2723, 1967 and 1909 milliseconds (<60 s each), including transaction submission.
+The CI job runs lint, codegen/typecheck, unit tests and this end-to-end flow on `m6-monitor` pushes.
+
+**M6 public-testnet acceptance remains pending M7 deployment.** No Base Sepolia module address or
+provider delivery result is claimed. The test uses real module queue/budget/freeze calls; EntryPoint
+and emergency events use log emitters to isolate indexing and account attribution. The worker's
+application links target the settings and exit routes to be implemented in M5.

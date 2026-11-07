@@ -48,6 +48,8 @@ The optional monitor stores only account addresses and the contact details you g
 
 MIT, except `contracts/test/fixtures/Safe7579Head.sol`, which is GPL-3.0: it holds upstream Safe7579 bytecode, used only by tests and never deployed.
 
+Monitor setup, privacy, and alert verification: [apps/monitor/README.md](apps/monitor/README.md).
+
 ## CROPS
 
 **Lead property: S — security enforced onchain.** A compromised trading session cannot replace the rules,
@@ -64,3 +66,4 @@ The local software authenticator is a test fixture, not a place to keep real key
 real-browser UX, independent-origin recovery, and the <=3-minute submission video remain release gates.
 
 Run the SDK fork demo: [packages/sdk/README.md](packages/sdk/README.md). Submission gates and video script: [docs/crops-submission.md](docs/crops-submission.md).
+
