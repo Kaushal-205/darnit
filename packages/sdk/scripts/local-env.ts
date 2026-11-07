@@ -1,10 +1,10 @@
 /**
- * `local` environment: an Anvil fork of Base Sepolia with our contracts and fixtures deployed by the
+ * `local` environment: an Anvil fork of Ethereum Sepolia with our contracts and fixtures deployed by the
  * Foundry scripts. Used by scripts/demo.ts and the integration test.
  *
  * Env:
- *   FORK_URLS   comma-separated Base Sepolia RPCs to fork (tried in order; default public endpoints)
- *   FORK_BLOCK_NUMBER optional snapshot block (default 55476014, verified infrastructure snapshot)
+ *   FORK_URLS   comma-separated Ethereum Sepolia RPCs to fork (tried in order; default public endpoints)
+ *   FORK_BLOCK_NUMBER optional snapshot block (default 12080000, verified infrastructure snapshot)
  *   RPC_URL     use an already running node instead of starting Anvil (it must allow oversize code,
  *               see contracts/script/DeploySmartSessions.s.sol)
  *   FOUNDRY_BIN directory with forge/anvil (default: PATH, then ~/.foundry/bin)
@@ -16,9 +16,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Address } from "viem";
 import {
-  BASE_SEPOLIA,
+  ETHEREUM_SEPOLIA,
   type FirewallAddresses,
-  baseSepoliaAddresses,
+  ethereumSepoliaAddresses,
 } from "../src/addresses.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -34,8 +34,9 @@ export const ANVIL_KEYS = {
 
 export const LOCAL_CHAIN_ID = 31337;
 const DEFAULT_FORK_URLS = [
-  "https://sepolia.base.org",
-  "https://base-sepolia-rpc.publicnode.com",
+  "https://ethereum-sepolia-rpc.publicnode.com",
+  "https://sepolia.drpc.org",
+  "https://1rpc.io/sepolia",
 ];
 
 export type Fixtures = {
@@ -106,7 +107,7 @@ async function startAnvil(
         "--fork-url",
         forkUrl,
         "--fork-block-number",
-        process.env.FORK_BLOCK_NUMBER ?? "55476014",
+        process.env.FORK_BLOCK_NUMBER ?? "12080000",
         "--chain-id",
         String(LOCAL_CHAIN_ID),
         "--disable-code-size-limit",
@@ -127,7 +128,9 @@ async function startAnvil(
     proc.kill();
     await new Promise((res) => setTimeout(res, 2000 * (attempt + 1)));
   }
-  throw new Error(`could not start an Anvil fork of Base Sepolia: ${lastErr}`);
+  throw new Error(
+    `could not start an Anvil fork of Ethereum Sepolia: ${lastErr}`,
+  );
 }
 
 function forgeScript(
@@ -181,18 +184,18 @@ export function deployAll(rpcUrl: string): {
   forgeScript("script/DeployFixtures.s.sol", rpcUrl, {
     MAKER_PRIVATE_KEY: ANVIL_KEYS.maker,
   });
-  const firewall = readDeployment<Parameters<typeof baseSepoliaAddresses>[0]>(
-    `${LOCAL_CHAIN_ID}.json`,
-  );
+  const firewall = readDeployment<
+    Parameters<typeof ethereumSepoliaAddresses>[0]
+  >(`${LOCAL_CHAIN_ID}.json`);
   forgeScript(
     "script/DeployLocalAttestations.s.sol",
     rpcUrl,
     {
-      REGISTRY: BASE_SEPOLIA.registry,
+      REGISTRY: ETHEREUM_SEPOLIA.registry,
       MODULES: [
         firewall.signaturePolicy,
         firewall.actionPolicy,
-        BASE_SEPOLIA.ownableValidator,
+        ETHEREUM_SEPOLIA.ownableValidator,
       ].join(","),
     },
     ["--tc", "DeployLocalAttestations"],
@@ -201,7 +204,10 @@ export function deployAll(rpcUrl: string): {
     `${LOCAL_CHAIN_ID}.attester.json`,
   );
   const fixtures = readDeployment<Fixtures>(`${LOCAL_CHAIN_ID}.fixtures.json`);
-  return { addresses: baseSepoliaAddresses(firewall, { attester }), fixtures };
+  return {
+    addresses: ethereumSepoliaAddresses(firewall, { attester }),
+    fixtures,
+  };
 }
 
 /** Start (or attach to) a local node and deploy everything. */

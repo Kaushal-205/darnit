@@ -1,5 +1,5 @@
 import type { Address, Hex, LocalAccount } from "viem";
-import { BASE_SEPOLIA } from "./addresses.js";
+import { ETHEREUM_SEPOLIA } from "./addresses.js";
 import {
   DUMMY_ECDSA_SIGNATURE,
   encodeOwnableValidatorData,
@@ -36,7 +36,7 @@ export function ecdsaOwner(
 ): OwnerSigner & { address: Address } {
   return {
     address: signer.address,
-    validator: opts.validator ?? BASE_SEPOLIA.ownableValidator,
+    validator: opts.validator ?? ETHEREUM_SEPOLIA.ownableValidator,
     validatorInitData: encodeOwnableValidatorData([signer.address]),
     signUserOpHash: (userOpHash) =>
       signer.signMessage({ message: { raw: userOpHash } }),

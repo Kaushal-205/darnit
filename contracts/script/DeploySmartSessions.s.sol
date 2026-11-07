@@ -7,7 +7,7 @@ import {SMART_SESSION_DEPLOYED_BYTECODE} from "modulekit/deployment/precompiles/
 /// @title DeploySmartSessions (LOCAL ONLY)
 /// @notice Deploys the Smart Sessions build bundled with ModuleKit 0.5.9, whose `Session` ABI matches
 ///         src/interfaces/ISmartSessions.sol (`allowedERC7739Content` is `string[]`, no paymaster flag).
-///         The canonical Smart Sessions on Base Sepolia uses a newer ABI (see docs/decisions.md V13), so
+///         The canonical Smart Sessions on Ethereum Sepolia uses a newer ABI (see docs/decisions.md V13), so
 ///         `local` (Anvil fork) uses this build until the contracts are moved to the deployed ABI.
 /// @dev The runtime is ~24.4 KB, above the EIP-170 limit: start Anvil with `--disable-code-size-limit`.
 ///      This cannot be deployed to a public chain; the script refuses unless ALLOW_OVERSIZE=true.

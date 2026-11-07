@@ -1,6 +1,6 @@
 /**
  * M4 demo: onboard -> session -> trade -> blocked drain -> exit, against the `local` environment
- * (Anvil fork of Base Sepolia). Run: `pnpm --filter @session-firewall/sdk demo`.
+ * (Anvil fork of Ethereum Sepolia). Run: `pnpm --filter @session-firewall/sdk demo`.
  * Also exercised by test/integration/demo.test.ts.
  */
 import { pathToFileURL } from "node:url";
@@ -61,7 +61,7 @@ const usd = (v: bigint) => `$${formatUnits(v, 6)}`;
 export function localChain(rpcUrl: string): Chain {
   return defineChain({
     id: LOCAL_CHAIN_ID,
-    name: "Base Sepolia fork (local)",
+    name: "Ethereum Sepolia fork (local)",
     nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
     rpcUrls: { default: { http: [rpcUrl] } },
   });
@@ -268,7 +268,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const env = await startLocalEnv();
   try {
     console.log(
-      `local env: ${env.rpcUrl} (Anvil fork of Base Sepolia), module ${env.addresses.module}`,
+      `local env: ${env.rpcUrl} (Anvil fork of Ethereum Sepolia), module ${env.addresses.module}`,
     );
     const r = await runDemo(env);
     const ok =

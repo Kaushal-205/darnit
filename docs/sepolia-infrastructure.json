@@ -1,7 +1,8 @@
 {
-  "chainId": 84532,
-  "blockNumber": "55476014",
+  "chainId": 11155111,
+  "blockNumber": "12080000",
   "firewallEnableSessionsSelector": "0xf55af6d1",
+  "emergencyUninstallHookSelector": "0x5bfeadbb",
   "contracts": {
     "entryPoint": {
       "address": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
@@ -26,7 +27,8 @@
     "safe7579": {
       "address": "0x7579EE8307284F293B1927136486880611F20002",
       "codeHash": "0xe03f1efc4aa74c91a87731397278a9c32d81f593263931fc94ff867aa09b83ac",
-      "codeSize": 20014
+      "codeSize": 20014,
+      "hasEmergencyUninstallHook": false
     },
     "safe7579Launchpad": {
       "address": "0x7579011aB74c46090561ea277Ba79D510c6C00ff",
@@ -35,7 +37,7 @@
     },
     "registry": {
       "address": "0x000000000069E2a187AEFFb852bF3cCdC95151B2",
-      "codeHash": "0xe854e35a6d66f28b235af93718ffc164a03bafd057d245034f67dac391a795fd",
+      "codeHash": "0xd105e93744020f90f872c5f88b4d8bda6e982910cb8a89165c32d460642e9fd2",
       "codeSize": 18522
     },
     "smartSessionsCanonical": {

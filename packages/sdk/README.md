@@ -7,7 +7,7 @@ ERC-1271 envelopes. The bundler and optional paymaster URLs are caller-supplied.
 ## Run the local demo
 
 Requirements: Node 22.18+, pnpm 9.15.0, Foundry 1.9.0 (`forge`, `anvil` on PATH or in `~/.foundry/bin`),
-and network access to Base Sepolia RPC. From the repository root:
+and network access to an Ethereum Sepolia (chain 11155111) RPC. From the repository root:
 
 ```sh
 pnpm install --frozen-lockfile
@@ -19,15 +19,16 @@ pnpm --filter @session-firewall/sdk build
 pnpm --filter @session-firewall/sdk demo
 ```
 
-The demo forks Base Sepolia at block **55476014**, deploys local fixtures and firewall contracts,
+The demo forks Ethereum Sepolia at block **12080000**, deploys local fixtures and firewall contracts,
 onboards a Safe with `NoSafeOwner` and `FirewallOwnerValidator`, creates a session, buys 100 YES
 shares for 50 USDC, attempts a 5,000 USDC drain (blocked), and exits the remaining 9,950 USDC to the
 registered destination. It starts no application server or monitor. It uses a software P-256
 authenticator solely as a local browser stand-in; **never fund these fixture keys on a public chain**.
 
-Override `FORK_URLS` with a comma-separated list of RPC URLs or `FORK_BLOCK_NUMBER` with another
-snapshot. `FOUNDRY_BIN` selects a Foundry directory. `RPC_URL` attaches to an existing Anvil instance
-on chain 31337 (forked Base Sepolia, with code-size limits disabled). The local scripts refuse other
+Override `FORK_URLS` with a comma-separated list of Ethereum Sepolia RPC URLs (defaults: publicnode,
+drpc and 1rpc public endpoints, tried in order) or `FORK_BLOCK_NUMBER` with another snapshot. The RPC
+must serve state at the fork block, so use an archive endpoint once the default block is old. `FOUNDRY_BIN` selects a Foundry directory. `RPC_URL` attaches to an existing Anvil instance
+on chain 31337 (forked Ethereum Sepolia, with code-size limits disabled). The local scripts refuse other
 chain IDs. The optional `BUNDLER_URL`/`PAYMASTER_URL` use third-party ERC-4337 infrastructure; otherwise
 a public Anvil development key submits `EntryPoint.handleOps` locally. No live bundler is claimed tested.
 
@@ -84,12 +85,15 @@ pnpm --filter @session-firewall/sdk test:integration
 pnpm --filter @session-firewall/sdk verify:infrastructure
 ```
 
+`verify:infrastructure` reads Ethereum Sepolia (`VERIFY_RPC_URL`, optional `VERIFY_BLOCK_NUMBER`) and
+prints code hashes plus the V13/V11 selector checks; `VERIFY_REPORT=<path>` also writes the JSON.
+
 The integration suite uses the actual forked Safe, launchpad, EntryPoint and module registry. It
 checks onboarding, NoSafeOwner, hook/session installation, trades, owner/session attacks, the 24-hour
 queue, expiry/revocation/freeze, exits, D12 PersonalSign/TypedDataSign/permit rejection, and V13 ABI.
 CI repeats the fork suite. `abi` regenerates committed ABIs from Foundry output.
 
-**V13 blocks public deployment.** Both listed Base Sepolia Smart Sessions deployments reject the
+**V13 blocks public deployment.** Both listed Ethereum Sepolia Smart Sessions deployments reject the
 `enableSessions` tuple currently used by FirewallModule (selector `0xf55af6d1`). The fork installs
 ModuleKit 0.5.9's matching runtime locally; that runtime is larger than EIP-170 permits. The fork
 therefore needs `--disable-code-size-limit`, and this workaround cannot be shipped to testnet/mainnet.
@@ -99,6 +103,6 @@ deploying. A selector check is a compatibility screen, not proof of a contract's
 
 `Deploy.s.sol` deploys deterministic wiring and the D12 owner validator; outputs are written to
 `contracts/deployments/<chainId>.json`. The checked public infrastructure addresses/code hashes are in
-`docs/base-sepolia-infrastructure.json`, captured at block 55476014; they are third-party addresses,
+`docs/sepolia-infrastructure.json`, captured at Ethereum Sepolia block 12080000; they are third-party addresses,
 not a Session Firewall testnet deployment. No deployer funding, live bundler, public contract verification,
 browser passkeys, or production readiness is implied by a passing local fork demo.

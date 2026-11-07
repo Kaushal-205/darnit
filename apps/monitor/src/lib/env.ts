@@ -3,11 +3,11 @@ import { type Address, getAddress } from "viem";
 /** EntryPoint v0.7, same address on every chain. */
 export const ENTRYPOINT_V07: Address =
   "0x0000000071727De22E5E9d8BAf0edAc6f37da032";
-/** Safe7579 adapter v1.0.0 (CREATE2, same address on every chain). Verify against the deployed version. */
+/** Safe7579 adapter v1.0.0 (CREATE2; code verified on Ethereum Sepolia, docs/sepolia-infrastructure.json). */
 export const SAFE7579_DEFAULT: Address =
   "0x7579EE8307284F293B1927136486880611F20002";
-/** Base Sepolia. */
-export const DEFAULT_CHAIN_ID = 84532;
+/** Ethereum Sepolia (override with CHAIN_ID). */
+export const DEFAULT_CHAIN_ID = 11155111;
 
 type Env = Record<string, string | undefined>;
 

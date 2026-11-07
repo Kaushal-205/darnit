@@ -1,12 +1,13 @@
 import type { Address } from "viem";
 
 /**
- * Third-party contracts on Base Sepolia (chain 84532), verified 2026-11-07 with `cast code` against
- * https://sepolia.base.org and selector checks (docs/decisions.md V14). The same addresses exist on an
- * Anvil fork of Base Sepolia (`local`).
+ * Third-party contracts on Ethereum Sepolia (chain 11155111), verified 2026-11-07 with `cast code` at
+ * block 12080000 and selector checks (docs/decisions.md V14, docs/sepolia-infrastructure.json). The
+ * same addresses exist on an Anvil fork of Ethereum Sepolia (`local`). All are deterministic
+ * deployments; to target another chain, pass your own `FirewallAddresses`.
  */
-export const BASE_SEPOLIA = {
-  chainId: 84532,
+export const ETHEREUM_SEPOLIA = {
+  chainId: 11155111,
   /** ERC-4337 EntryPoint v0.7 */
   entryPoint: "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
   /** Safe 1.4.1 singleton (non-L2, the build the ModuleKit integration tests use) */
@@ -19,7 +20,10 @@ export const BASE_SEPOLIA = {
   safe7579: "0x7579EE8307284F293B1927136486880611F20002",
   /** Rhinestone Safe7579Launchpad v1.0.0 (REGISTRY = Rhinestone registry below) */
   safe7579Launchpad: "0x7579011aB74c46090561ea277Ba79D510c6C00ff",
-  /** Rhinestone ERC-7484 module registry, wired into the launchpad */
+  /**
+   * Rhinestone ERC-7484 module registry, wired into the launchpad. Same build as on other chains; the
+   * code hash differs only in the immutable chain id / EIP-712 domain separator.
+   */
   registry: "0x000000000069E2a187AEFFb852bF3cCdC95151B2",
   /**
    * Canonical Smart Sessions (v1.0.x). Its `Session` ABI uses `ERC7739Context[]` plus a
@@ -73,19 +77,19 @@ export type FirewallDeploymentJson = {
   ownerValidator: Address;
 };
 
-/** Combine Base Sepolia infrastructure with a firewall deployment. */
-export function baseSepoliaAddresses(
+/** Combine Ethereum Sepolia infrastructure with a firewall deployment. */
+export function ethereumSepoliaAddresses(
   deployment: FirewallDeploymentJson,
   opts: { attester?: Address } = {},
 ): FirewallAddresses {
   return {
     attester: opts.attester,
-    entryPoint: BASE_SEPOLIA.entryPoint,
-    safeSingleton: BASE_SEPOLIA.safeSingleton,
-    safeProxyFactory: BASE_SEPOLIA.safeProxyFactory,
-    safe7579: BASE_SEPOLIA.safe7579,
-    safe7579Launchpad: BASE_SEPOLIA.safe7579Launchpad,
-    ownableValidator: BASE_SEPOLIA.ownableValidator,
+    entryPoint: ETHEREUM_SEPOLIA.entryPoint,
+    safeSingleton: ETHEREUM_SEPOLIA.safeSingleton,
+    safeProxyFactory: ETHEREUM_SEPOLIA.safeProxyFactory,
+    safe7579: ETHEREUM_SEPOLIA.safe7579,
+    safe7579Launchpad: ETHEREUM_SEPOLIA.safe7579Launchpad,
+    ownableValidator: ETHEREUM_SEPOLIA.ownableValidator,
     smartSessions: deployment.smartSessions,
     module: deployment.module,
     hook: deployment.hook,
@@ -95,3 +99,11 @@ export function baseSepoliaAddresses(
     ownerValidator: deployment.ownerValidator,
   };
 }
+
+/**
+ * @deprecated Pre-retarget names. The project targets Ethereum Sepolia; these alias the Ethereum
+ * Sepolia values (chainId 11155111) and exist only so in-flight branches keep compiling.
+ */
+export const BASE_SEPOLIA = ETHEREUM_SEPOLIA;
+/** @deprecated Use `ethereumSepoliaAddresses`. */
+export const baseSepoliaAddresses = ethereumSepoliaAddresses;

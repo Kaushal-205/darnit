@@ -19,7 +19,7 @@ function setup() {
   const store = memoryStore();
   const app = createApi({
     store,
-    chainId: 84532,
+    chainId: 11155111,
     webhookMasterSecret: "master",
     now: () => NOW,
     verify: ({ address, message, signature }) =>
@@ -38,7 +38,7 @@ async function signed(
   const message = subscriptionMessage({
     action,
     account: owner.address,
-    chainId: 84532,
+    chainId: 11155111,
     contacts,
     issuedAt,
     nonce,
@@ -173,7 +173,7 @@ describe("subscriptions API", () => {
       nonce: "abcdefgh",
     });
     expect((await json(res)).message).toBe(
-      `Session Firewall monitor: subscribe\nAccount: ${owner.address}\nChain ID: 84532\nChannels:\n- telegram:1\nIssued at: ${NOW}\nNonce: abcdefgh`,
+      `Session Firewall monitor: subscribe\nAccount: ${owner.address}\nChain ID: 11155111\nChannels:\n- telegram:1\nIssued at: ${NOW}\nNonce: abcdefgh`,
     );
   });
 });
@@ -183,7 +183,7 @@ describe("subscriptions API failure paths", () => {
     const errors: unknown[] = [];
     const app = createApi({
       store: memoryStore(),
-      chainId: 84532,
+      chainId: 11155111,
       now: () => NOW,
       onError: (e) => errors.push(e),
       verify: async () => {
@@ -207,7 +207,7 @@ describe("subscriptions API failure paths", () => {
     };
     const app = createApi({
       store,
-      chainId: 84532,
+      chainId: 11155111,
       now: () => NOW,
       verify: async () => true,
     });
@@ -223,7 +223,7 @@ describe("subscriptions API failure paths", () => {
   it("rejects a channel this deployment cannot deliver", async () => {
     const app = createApi({
       store: memoryStore(),
-      chainId: 84532,
+      chainId: 11155111,
       now: () => NOW,
       enabledChannels: ["email"],
       verify: async () => true,

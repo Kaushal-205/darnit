@@ -22,7 +22,7 @@ import {
   startLocalEnv,
 } from "../../scripts/local-env.js";
 import {
-  BASE_SEPOLIA,
+  ETHEREUM_SEPOLIA,
   type FirewallAccount,
   FirewallError,
   type FirewallSession,
@@ -77,8 +77,8 @@ describe("V13: exact Smart Sessions ABI", () => {
     const result = await client.call({ to: env.addresses.smartSessions, data });
     expect(result.data).toBeDefined();
     for (const address of [
-      BASE_SEPOLIA.smartSessionsCanonical,
-      BASE_SEPOLIA.smartSessionsLegacy,
+      ETHEREUM_SEPOLIA.smartSessionsCanonical,
+      ETHEREUM_SEPOLIA.smartSessionsLegacy,
     ])
       await expect(client.call({ to: address, data })).rejects.toThrow();
   });

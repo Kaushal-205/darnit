@@ -79,7 +79,7 @@ revocation, and duplicates. EntryPoint and emergency events use exact event emit
 not claim a real ERC-4337 bundler or emergency-uninstall execution. On 2026-11-07, queued-change
 latencies were **2723, 1967, and 1909 ms**, including submission and two-second blocks. CI repeats it.
 
-**Public-testnet acceptance is pending M7.** No firewall instance has been deployed to Base Sepolia.
+**Public-testnet acceptance is pending M7.** No firewall instance has been deployed to Ethereum Sepolia.
 After deployment, set the real address and start block, subscribe a test receiver, queue a change
 through the SDK, and measure from transaction submission to receiver arrival (must be <60 seconds).
 Cancel the queued item afterwards. Test each enabled provider too; local tests do not prove provider

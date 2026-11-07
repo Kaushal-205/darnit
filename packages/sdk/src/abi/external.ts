@@ -1,6 +1,6 @@
 // Hand-written minimal ABIs for the third-party contracts the SDK talks to.
 // Versions: Safe 1.4.1, Safe7579 v1.0.0 + Safe7579Launchpad v1.0.0, Smart Sessions (ModuleKit 0.5.9 ABI),
-// Rhinestone OwnableValidator. Selectors were checked against Base Sepolia bytecode (docs/decisions.md V14).
+// Rhinestone OwnableValidator. Selectors were checked against Ethereum Sepolia bytecode (docs/decisions.md V14).
 
 const moduleInit = {
   type: "tuple[]",
