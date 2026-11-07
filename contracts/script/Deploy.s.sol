@@ -6,8 +6,10 @@ import {FirewallModule} from "../src/FirewallModule.sol";
 import {FirewallHook} from "../src/FirewallHook.sol";
 import {FirewallActionPolicy} from "../src/policies/FirewallActionPolicy.sol";
 import {NoSignaturePolicy} from "../src/policies/NoSignaturePolicy.sol";
+import {IFirewallModule} from "../src/interfaces/IFirewallModule.sol";
 import {ISmartSessions} from "../src/interfaces/ISmartSessions.sol";
 import {FirewallDeployer} from "./FirewallDeployer.sol";
+import {FirewallOwnerValidator} from "../src/validators/FirewallOwnerValidator.sol";
 import {NoSafeOwner} from "./NoSafeOwner.sol";
 
 /// @title Deploy
@@ -32,6 +34,7 @@ contract Deploy is Script {
         address hook;
         address actionPolicy;
         address module;
+        address ownerValidator;
     }
 
     function run() external returns (Deployment memory d) {
@@ -45,7 +48,15 @@ contract Deploy is Script {
         d.deployer = _create2(
             salt,
             abi.encodePacked(
-                type(FirewallDeployer).creationCode, abi.encode(ISmartSessions(d.smartSessions), d.signaturePolicy)
+                type(FirewallDeployer).creationCode,
+                abi.encode(ISmartSessions(d.smartSessions), d.signaturePolicy)
+            )
+        );
+        d.ownerValidator = _create2(
+            salt,
+            abi.encodePacked(
+                type(FirewallOwnerValidator).creationCode,
+                abi.encode(IFirewallModule(FirewallDeployer(d.deployer).module()))
             )
         );
         vm.stopBroadcast();
@@ -69,7 +80,7 @@ contract Deploy is Script {
 
     /// @notice V13: FirewallModule ABI-encodes the Smart Sessions `Session` itself, so the target Smart Sessions
     ///         must expose `enableSessions` with exactly the struct layout in src/interfaces/ISmartSessions.sol.
-    ///         The selector encodes the full tuple type, so its presence in the dispatcher is a sound check.
+    ///         The selector encodes the full tuple type; presence is a compatibility screen, not proof of semantics.
     function checkSmartSessionsAbi(address smartSessions) public view {
         bytes memory code = smartSessions.code;
         require(code.length > 0, "SMART_SESSIONS has no code");
@@ -104,8 +115,10 @@ contract Deploy is Script {
         vm.serializeAddress(k, "firewallDeployer", d.deployer);
         vm.serializeAddress(k, "hook", d.hook);
         vm.serializeAddress(k, "actionPolicy", d.actionPolicy);
-        string memory json = vm.serializeAddress(k, "module", d.module);
-        string memory path = string.concat(vm.projectRoot(), "/deployments/", vm.toString(block.chainid), ".json");
+        vm.serializeAddress(k, "module", d.module);
+        string memory json = vm.serializeAddress(k, "ownerValidator", d.ownerValidator);
+        string memory path =
+            string.concat(vm.projectRoot(), "/deployments/", vm.toString(block.chainid), ".json");
         vm.writeJson(json, path);
         console2.log("wrote", path);
     }

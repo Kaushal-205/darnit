@@ -21,7 +21,8 @@
     "test": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
     "abi": "tsx scripts/extract-abis.ts",
-    "demo": "tsx scripts/demo.ts"
+    "demo": "tsx scripts/demo.ts",
+    "verify:infrastructure": "tsx scripts/verify-infrastructure.ts"
   },
   "dependencies": {
     "permissionless": "0.5.2",

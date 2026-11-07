@@ -4,6 +4,7 @@
  *
  * Env:
  *   FORK_URLS   comma-separated Base Sepolia RPCs to fork (tried in order; default public endpoints)
+ *   FORK_BLOCK_NUMBER optional snapshot block (default 55476014, verified infrastructure snapshot)
  *   RPC_URL     use an already running node instead of starting Anvil (it must allow oversize code,
  *               see contracts/script/DeploySmartSessions.s.sol)
  *   FOUNDRY_BIN directory with forge/anvil (default: PATH, then ~/.foundry/bin)
@@ -104,6 +105,8 @@ async function startAnvil(
       [
         "--fork-url",
         forkUrl,
+        "--fork-block-number",
+        process.env.FORK_BLOCK_NUMBER ?? "55476014",
         "--chain-id",
         String(LOCAL_CHAIN_ID),
         "--disable-code-size-limit",

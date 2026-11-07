@@ -44,3 +44,4 @@ export {
   sendUserOp,
   toFirewallSmartAccount,
 } from "./userop.js";
+export * from "./passkey.js";

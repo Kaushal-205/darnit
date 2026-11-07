@@ -63,6 +63,7 @@ contract DeployLocalAttestations is Script {
     bytes32 internal constant SALT = keccak256("session-firewall.local-attestations.v1");
 
     function run() external returns (address attester) {
+        require(block.chainid == 31337, "local Anvil only: chain id must be 31337");
         IRegistryLike registry = IRegistryLike(vm.envAddress("REGISTRY"));
         address[] memory modules = vm.envAddress("MODULES", ",");
         // Smart Sessions checks session validators with type 7 (stateless validator), policies with no type

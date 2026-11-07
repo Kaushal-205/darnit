@@ -14,6 +14,12 @@ const dest = join(here, "../src/abi");
 
 /** [solidity file, contract name, exported const name] */
 const CONTRACTS: [string, string, string][] = [
+  ["ISmartSessions.sol", "ISmartSessions", "firewallSmartSessionsAbi"],
+  [
+    "FirewallOwnerValidator.sol",
+    "FirewallOwnerValidator",
+    "firewallOwnerValidatorAbi",
+  ],
   ["FirewallModule.sol", "FirewallModule", "firewallModuleAbi"],
   ["FirewallHook.sol", "FirewallHook", "firewallHookAbi"],
   [

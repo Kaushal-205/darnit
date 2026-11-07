@@ -19,7 +19,7 @@ Sources read on 2026-11-07: `rhinestonewtf/safe7579` @ `9f507f3` (2026-09-21), `
 | V9 | `executeUserOp` | **VERIFIED** | Safe7579 does not implement `IAccountExecute`. The hook still rejects it. |
 | V10 | Revert bubbling | **CONFLICTING** | HEAD source turns every inner revert into `ExecutionFailed()` (`core/ExecutionHelper.sol`). The ModuleKit 0.5.9 bytecode **bubbles our custom errors** (the integration tests assert the exact errors). The SDK must handle both: decode a firewall error when present, otherwise re-simulate (`debug_traceCall`, or a view `explain` helper on the hook). Re-check on the deployed Base Sepolia version. |
 | V11 | **Emergency hook uninstall** (new) | **VERIFIED: bypass of R6; CLOSED by D12** | `emergencyUninstallHook` is not hooked and doesn't use our queue. With a signature from any installed validator via `isValidSignatureWithSender`, it removes the hook after 1 day, and **the owner cannot cancel it** (it only resets after 3 days). Smart Sessions sessions can't sign it (no 1271 policy). Safe signers can't (`NoSafeOwner`). The passkey now can't either: `EmergencyUninstall` is a reserved type (**D12**). **The function exists only in some versions:** Safe7579 at `9f507f3` has it, while the ModuleKit 0.5.9 bytecode and the contract at `0x7579EE8307284F293B1927136486880611F20002` on Base Sepolia do not (selector `0x5bfeadbb` is absent). `test_V11_*` therefore run on the upstream `9f507f3` artifact (`test/fixtures/Safe7579Head.sol`), with a control that removes the hook through a permissive validator. Any other validator added later reopens this, so the monitor should still alert on `EmergencyHookUninstallRequest` and on queued validator installs. |
-| V13 | Smart Sessions struct ABI (new) | **NOTE: pin it** | ModuleKit 0.5.9 bundles a Smart Sessions version whose `ERC7739Data.allowedERC7739Content` is `string[]`; HEAD (`f5aaf86`) uses `ERC7739Context[]`. `FirewallModule.createSession` ABI-encodes the session itself (`src/interfaces/ISmartSessions.sol`), so the deployed Smart Sessions **must** match that ABI. Check before deploy; add a fork test against the deployed address. |
+| V13 | Smart Sessions struct ABI | **VERIFIED mismatch; public-deploy blocker** | At Base Sepolia block 55476014, canonical `0x00000000002B0eCfbD0496EE71e01257dA0E37DE` and legacy `0x00000000008bDABA73cD9815d79069c247Eb4bDA` lack the firewall's `enableSessions` selector `0xf55af6d1`. The fork test calls the exact old ABI against both and requires rejection. The local ModuleKit 0.5.9 runtime matches, but exceeds EIP-170 and is allowed only on Anvil 31337. Resolve a compatible deployable build or migrate the ABI before M7; no production source was changed in M4. |
 | V12 | ModuleKit maintenance (new) | NOTE | ModuleKit is marked "no longer maintained". Fine as a test harness for v1. Before mainnet, re-run the integration suite against the exact deployed Safe7579 / Smart Sessions bytecode (fork test). |
 
 ## Design decisions made in M1
@@ -91,3 +91,22 @@ Sessions are created only through `FirewallModule.createSession(...)` (D13), so 
 
 - **A13, V8, V11: closed by D12** (`test/integration/OwnerValidator.t.sol`). Before testnet: `V7` setup must use `NoSafeOwner`, the SDK must build the D12 envelopes, and `WebAuthn` needs audit coverage (V4).
 - **Destination side effects.** A destination that is a contract forwarding funds onward inside the same transaction would trip `UnexplainedOutflow` (a false positive, not a loss). Recommend EOAs or simple vaults as destinations.
+
+## M4 SDK verification (2026-11-07)
+
+Runbook: `packages/sdk/README.md`. Passkey user ops and D12 envelopes are built by the SDK and tested
+against the deployed FirewallOwnerValidator on an Anvil fork. The demo uses a local software P-256
+authenticator, not an ECDSA owner placeholder; browser credential creation/recovery remains M5.
+The suite covers onboard -> session -> trade -> blocked drain -> exit, plus NoSafeOwner, queue,
+freeze/revocation/expiry and owner/session attacks. No application server or monitor authorizes it.
+
+**V14 — Public infrastructure:** `docs/base-sepolia-infrastructure.json` records code presence, sizes
+and hashes at Base Sepolia block 55476014 for EntryPoint v0.7, Safe 1.4.1, Safe7579, launchpad,
+registry, OwnableValidator, CREATE2 factory and both incompatible Smart Sessions deployments.
+This is runtime evidence, not explorer source verification. Firewall contract addresses exist only
+on the local fork. M7 still needs V13 resolved, funded deployment, a bundler and published addresses.
+
+**CROPS boundaries:** see `docs/crops-submission.md`. Lead property is onchain protection from a
+compromised client. RP-domain-bound passkeys mean saved-file/arbitrary-origin recovery cannot be
+claimed without a separately enrolled/tested recovery path. The three-minute browser video and
+tracker-free client bundle audit remain M5/M8 submission gates.

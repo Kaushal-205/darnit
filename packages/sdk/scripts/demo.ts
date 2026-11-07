@@ -24,7 +24,6 @@ import {
   buildAccountInit,
   createFirewallAccount,
   createSession,
-  ecdsaOwner,
   executeAsSession,
   exit,
   fill,
@@ -41,6 +40,8 @@ import {
   type LocalEnv,
   startLocalEnv,
 } from "./local-env.js";
+
+import { testPasskey } from "./test-passkey.js";
 
 export type DemoResult = {
   account: Address;
@@ -111,9 +112,7 @@ export async function runDemo(
   });
   const maker = privateKeyToAccount(ANVIL_KEYS.maker);
 
-  const owner = ecdsaOwner(privateKeyToAccount(generatePrivateKey()), {
-    validator: env.addresses.ownableValidator,
-  });
+  const owner = testPasskey(env.addresses.ownerValidator);
   const destination = privateKeyToAccount(generatePrivateKey()).address; // the user's cold wallet
   const attacker = privateKeyToAccount(generatePrivateKey()).address;
   const hourlyCap = 1_000_000_000n; // $1,000 / hour

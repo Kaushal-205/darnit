@@ -1,0 +1,64 @@
+{
+  "chainId": 84532,
+  "blockNumber": "55476014",
+  "firewallEnableSessionsSelector": "0xf55af6d1",
+  "contracts": {
+    "entryPoint": {
+      "address": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+      "codeHash": "0x8db5ff695839d655407cc8490bb7a5d82337a86a6b39c3f0258aa6c3b582fc58",
+      "codeSize": 16035
+    },
+    "safeSingleton": {
+      "address": "0x41675C099F32341bf84BFc5382aF534df5C7461a",
+      "codeHash": "0x1fe2df852ba3299d6534ef416eefa406e56ced995bca886ab7a553e6d0c5e1c4",
+      "codeSize": 23579
+    },
+    "safeL2Singleton": {
+      "address": "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762",
+      "codeHash": "0xb1f926978a0f44a2c0ec8fe822418ae969bd8c3f18d61e5103100339894f81ff",
+      "codeSize": 24421
+    },
+    "safeProxyFactory": {
+      "address": "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67",
+      "codeHash": "0x50c3cdc4074750a7a974204a716c999edd37482f907608d960b2b025ee0b3317",
+      "codeSize": 3054
+    },
+    "safe7579": {
+      "address": "0x7579EE8307284F293B1927136486880611F20002",
+      "codeHash": "0xe03f1efc4aa74c91a87731397278a9c32d81f593263931fc94ff867aa09b83ac",
+      "codeSize": 20014
+    },
+    "safe7579Launchpad": {
+      "address": "0x7579011aB74c46090561ea277Ba79D510c6C00ff",
+      "codeHash": "0xe15c7413325ecf9e9fe60a315a0c9b49ad3003f3e6c254b9fa841dff8a8a32a5",
+      "codeSize": 11335
+    },
+    "registry": {
+      "address": "0x000000000069E2a187AEFFb852bF3cCdC95151B2",
+      "codeHash": "0xe854e35a6d66f28b235af93718ffc164a03bafd057d245034f67dac391a795fd",
+      "codeSize": 18522
+    },
+    "smartSessionsCanonical": {
+      "address": "0x00000000002B0eCfbD0496EE71e01257dA0E37DE",
+      "codeHash": "0xf2817b8943b9fc813ad3602de2f0b973dc6b7e190f1b77dc9eb02b8d3022ab0c",
+      "codeSize": 23940,
+      "hasFirewallEnableSelector": false
+    },
+    "smartSessionsLegacy": {
+      "address": "0x00000000008bDABA73cD9815d79069c247Eb4bDA",
+      "codeHash": "0x0a31363c38106cce18a3008234d95376a9f2f8bdc67976eab1d1f5ad3cc91b79",
+      "codeSize": 23608,
+      "hasFirewallEnableSelector": false
+    },
+    "ownableValidator": {
+      "address": "0x2483DA3A338895199E5e538530213157e931Bf06",
+      "codeHash": "0xd9ad90a204447aec1a1528d764e1d80212c8011dc0125b3995875e58ec9a43bf",
+      "codeSize": 6633
+    },
+    "create2Factory": {
+      "address": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "codeHash": "0x2fa86add0aed31f33a762c9d88e807c475bd51d0f52bd0955754b2608f7e4989",
+      "codeSize": 69
+    }
+  }
+}

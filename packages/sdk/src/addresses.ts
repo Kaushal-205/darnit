@@ -53,6 +53,7 @@ export type FirewallAddresses = {
   actionPolicy: Address;
   signaturePolicy: Address;
   noSafeOwner: Address;
+  ownerValidator: Address;
   /**
    * ERC-7484 attester the account trusts at creation. Needed only with the ModuleKit 0.5.9 Smart Sessions build
    * (`local`), which checks the registry for every policy and session validator it enables.
@@ -69,6 +70,7 @@ export type FirewallDeploymentJson = {
   actionPolicy: Address;
   signaturePolicy: Address;
   noSafeOwner: Address;
+  ownerValidator: Address;
 };
 
 /** Combine Base Sepolia infrastructure with a firewall deployment. */
@@ -90,5 +92,6 @@ export function baseSepoliaAddresses(
     actionPolicy: deployment.actionPolicy,
     signaturePolicy: deployment.signaturePolicy,
     noSafeOwner: deployment.noSafeOwner,
+    ownerValidator: deployment.ownerValidator,
   };
 }

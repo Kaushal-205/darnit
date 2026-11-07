@@ -16,6 +16,7 @@ contract DeploySmartSessions is Script {
     bytes32 internal constant SALT = keccak256("session-firewall.smart-sessions.modulekit-0.5.9");
 
     function run() external returns (address smartSessions) {
+        require(block.chainid == 31337, "local Anvil only: chain id must be 31337");
         require(vm.envOr("ALLOW_OVERSIZE", false), "local only: set ALLOW_OVERSIZE=true on an Anvil node");
         bytes memory runtime = SMART_SESSION_DEPLOYED_BYTECODE;
         // init code: CODECOPY the runtime that follows this 12-byte prefix and RETURN it

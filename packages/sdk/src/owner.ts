@@ -10,10 +10,7 @@ import {
  * ERC-4337 user operation hash for it. Every owner action is a user operation validated by
  * `validator` (selected via the nonce key), and then checked by the firewall hook like any other.
  *
- * A WebAuthn / passkey owner (FirewallOwnerValidator, docs/decisions.md D12) implements the same
- * interface: `validator` = its address, `validatorInitData` = its onInstall data (credential id,
- * public key), `signUserOpHash` = run navigator.credentials.get over the hash and encode the assertion
- * the way the validator expects.
+ * Use passkeyOwner or webAuthnOwner (passkey.ts) for FirewallOwnerValidator (D12).
  */
 export interface OwnerSigner {
   /** Validator module that checks owner signatures. Installed at account creation. */
@@ -29,8 +26,9 @@ export interface OwnerSigner {
 }
 
 /**
- * ECDSA owner through Rhinestone's OwnableValidator (1-of-1). OwnableValidator.validateUserOp checks
+ * TEST ONLY: ECDSA owner through Rhinestone's OwnableValidator (1-of-1). OwnableValidator.validateUserOp checks
  * an ECDSA signature over the EIP-191 hash of the user operation hash, so we `signMessage({ raw })`.
+ * This validator lacks D12 restrictions. Use passkeyOwner for user accounts.
  */
 export function ecdsaOwner(
   signer: LocalAccount,
