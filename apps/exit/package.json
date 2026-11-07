@@ -1,0 +1,32 @@
+{
+  "name": "@session-firewall/exit",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Standalone exit page: one self-contained HTML file that moves funds to a registered destination with only an RPC (and optionally a bundler) chosen by the user.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && tsx scripts/finalize.ts dist/exit.html",
+    "check:origins": "tsx scripts/check-origins.ts dist/exit.html",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "test": "vitest run",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@noble/curves": "1.9.1",
+    "@session-firewall/sdk": "workspace:*",
+    "viem": "2.57.16"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@playwright/test": "1.64.1",
+    "@types/node": "22.20.4",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vite": "8.3.1",
+    "vite-plugin-singlefile": "2.3.4",
+    "vitest": "5.0.5"
+  }
+}

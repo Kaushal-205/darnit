@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="__CSP__" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Move funds out</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Move funds out</h1>
+      <p class="lead">
+        This page sends money from your Session Firewall account to one of your trusted
+        destinations. It works even when trading is paused or the hourly spending limit is used
+        up. It is a single file: it talks only to the network addresses you type below, and to
+        nothing else.
+      </p>
+      <p id="origin-note" class="note"></p>
+
+      <section id="connect">
+        <h2>1. Connect</h2>
+        <label>Network address (RPC)
+          <input id="rpc" type="url" placeholder="https://..." autocomplete="off" spellcheck="false" />
+        </label>
+        <label>Network number (chain ID)
+          <input id="chain-id" type="text" inputmode="numeric" value="11155111" />
+          <small>11155111 is Ethereum Sepolia.</small>
+        </label>
+        <label>Your account address
+          <input id="account" type="text" placeholder="0x..." autocomplete="off" spellcheck="false" />
+        </label>
+        <fieldset>
+          <legend>How to send the request</legend>
+          <label class="inline"><input type="radio" name="submit" value="bundler" checked /> Through a bundler service</label>
+          <label class="inline"><input type="radio" name="submit" value="eoa" /> From my own funded wallet key (test networks and local use)</label>
+          <label id="bundler-field">Bundler address
+            <input id="bundler" type="url" placeholder="https://..." autocomplete="off" spellcheck="false" />
+          </label>
+          <label id="eoa-field" hidden>Wallet private key that pays the network fee
+            <input id="eoa-key" type="password" placeholder="0x..." autocomplete="off" spellcheck="false" />
+            <small>It is used only to pay the fee and never leaves this page. Use a throwaway key with a little ETH.</small>
+          </label>
+        </fieldset>
+        <details>
+          <summary>More options</summary>
+          <label>EntryPoint address
+            <input id="entry-point" type="text" spellcheck="false" />
+          </label>
+          <label>Extra share ids to look for (comma separated)
+            <input id="share-ids" type="text" spellcheck="false" />
+          </label>
+        </details>
+        <button id="connect-btn" type="button">Connect and read my account</button>
+        <p id="connect-status" class="status" role="status"></p>
+      </section>
+
+      <section id="account-section" hidden>
+        <h2>2. Your account</h2>
+        <p id="account-state"></p>
+        <h3>Balances</h3>
+        <table id="balances"><tbody></tbody></table>
+        <h3>Trusted destinations</h3>
+        <ul id="destinations"></ul>
+        <h3>Keys that can sign</h3>
+        <div id="keys"></div>
+      </section>
+
+      <section id="move-section" hidden>
+        <h2>3. Move funds</h2>
+        <label>What to move
+          <select id="asset"></select>
+        </label>
+        <label>Amount
+          <input id="amount" type="text" inputmode="decimal" placeholder="Leave empty to move all of it" />
+        </label>
+        <label>Send to
+          <select id="destination"></select>
+        </label>
+        <fieldset>
+          <legend>Sign with</legend>
+          <label class="inline"><input type="radio" name="signer" value="browser" checked /> A passkey on this device</label>
+          <label class="inline"><input type="radio" name="signer" value="external" /> Another device or tool (advanced)</label>
+        </fieldset>
+        <button id="move-btn" type="button">Move funds</button>
+        <p id="move-status" class="status" role="status"></p>
+
+        <div id="external" hidden>
+          <h3>Sign with another device or tool</h3>
+          <p>
+            Sign this request with your security key, for example with
+            <code>fido2-assert -G -p -v -i request.txt -o response.txt &lt;device&gt;</code> (libfido2),
+            then paste the output below. The first lines shown are the input file.
+          </p>
+          <label>Website name (RP ID) your key was made for
+            <input id="external-rpid" type="text" spellcheck="false" />
+          </label>
+          <pre id="external-request"></pre>
+          <label>Paste the signer's output (fido2-assert lines, or JSON with authenticatorData and signature)
+            <textarea id="external-response" rows="6" spellcheck="false"></textarea>
+          </label>
+          <button id="external-btn" type="button">Use this signature</button>
+        </div>
+
+        <div id="result" hidden>
+          <h3>Done</h3>
+          <dl>
+            <dt>Request id (user operation hash)</dt><dd id="result-userop"></dd>
+            <dt>Transaction</dt><dd id="result-tx"></dd>
+          </dl>
+          <p>Balances have been refreshed above.</p>
+        </div>
+      </section>
+
+      <section id="recovery">
+        <details>
+          <summary>Set up a recovery key for this page</summary>
+          <p>
+            A passkey only works on the website it was made for. If you want to be able to move funds
+            out even when the main website is gone, make a second passkey here, on the address where
+            you keep this page (for example <code>http://localhost:8000</code>), and add it to your
+            account from the main app. Adding a key waits 24 hours, like every other loosening change,
+            and you can cancel it during that time.
+          </p>
+          <label>Address of the recovery key contract (a FirewallOwnerValidator deployment)
+            <input id="recovery-validator" type="text" placeholder="0x..." spellcheck="false" />
+          </label>
+          <button id="recovery-btn" type="button">Make a recovery passkey here</button>
+          <p id="recovery-status" class="status" role="status"></p>
+          <pre id="recovery-out" hidden></pre>
+        </details>
+      </section>
+    </main>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
