@@ -6,6 +6,7 @@
   "scripts": {
     "contracts:build": "cd contracts && forge build",
     "contracts:test": "cd contracts && forge test -vvv",
+    "demo:web": "pnpm --filter @session-firewall/web demo",
     "lint": "biome check ."
   },
   "devDependencies": {

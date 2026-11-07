@@ -1,0 +1,9 @@
+{
+  "network": {
+    "chainId": 11155111,
+    "name": "Ethereum Sepolia",
+    "rpcUrl": "https://ethereum-sepolia-rpc.publicnode.com",
+    "explorerUrl": "https://sepolia.etherscan.io"
+  },
+  "deployment": null
+}
