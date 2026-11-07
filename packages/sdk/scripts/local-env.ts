@@ -14,7 +14,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Address } from "viem";
+import type { Address, Hex } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 import {
   ETHEREUM_SEPOLIA,
   type FirewallAddresses,
@@ -210,6 +211,30 @@ export function deployAll(rpcUrl: string): {
   };
 }
 
+/**
+ * The public Anvil dev keys carry EIP-7702 delegations on Ethereum Sepolia (anyone can sign for them),
+ * so on a fork they are not plain EOAs: the maker, for example, would reject ERC-1155 transfers. Strip
+ * that code on the local node so the fixture accounts behave as the EOAs they are meant to be.
+ */
+async function resetDevAccounts(rpcUrl: string): Promise<void> {
+  for (const key of Object.values(ANVIL_KEYS)) {
+    const address = privateKeyToAccount(key as Hex).address;
+    const r = await fetch(rpcUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "anvil_setCode",
+        params: [address, "0x"],
+      }),
+    });
+    const body = (await r.json()) as { error?: { message: string } };
+    if (body.error)
+      throw new Error(`anvil_setCode(${address}): ${body.error.message}`);
+  }
+}
+
 /** Start (or attach to) a local node and deploy everything. */
 export async function startLocalEnv(
   opts: { port?: number } = {},
@@ -224,6 +249,7 @@ export async function startLocalEnv(
     stop = () => anvil.proc.kill();
   }
   try {
+    await resetDevAccounts(rpcUrl);
     const { addresses, fixtures } = deployAll(rpcUrl);
     return { rpcUrl, addresses, fixtures, stop };
   } catch (e) {
