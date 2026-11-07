@@ -25,9 +25,11 @@ shares for 50 USDC, attempts a 5,000 USDC drain (blocked), and exits the remaini
 registered destination. It starts no application server or monitor. It uses a software P-256
 authenticator solely as a local browser stand-in; **never fund these fixture keys on a public chain**.
 
-Override `FORK_URLS` with a comma-separated list of Ethereum Sepolia RPC URLs (defaults: publicnode,
-drpc and 1rpc public endpoints, tried in order) or `FORK_BLOCK_NUMBER` with another snapshot. The RPC
-must serve state at the fork block, so use an archive endpoint once the default block is old. `FOUNDRY_BIN` selects a Foundry directory. `RPC_URL` attaches to an existing Anvil instance
+Override `FORK_URLS` with a comma-separated list of Ethereum Sepolia RPC URLs (defaults: the keyless
+Tenderly gateway, then 1rpc, tried in order at startup) or `FORK_BLOCK_NUMBER` with another snapshot.
+The RPC must serve historical state at the fork block. Pruned endpoints such as publicnode drop it
+within hours: the fork then starts normally but transactions stall until a receipt timeout. The keyless
+defaults can also fail under anvil's request load, so prefer your own archive RPC for repeatable runs. `FOUNDRY_BIN` selects a Foundry directory. `RPC_URL` attaches to an existing Anvil instance
 on chain 31337 (forked Ethereum Sepolia, with code-size limits disabled). The local scripts refuse other
 chain IDs. The optional `BUNDLER_URL`/`PAYMASTER_URL` use third-party ERC-4337 infrastructure; otherwise
 a public Anvil development key submits `EntryPoint.handleOps` locally. No live bundler is claimed tested.

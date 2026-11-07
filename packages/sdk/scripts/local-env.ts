@@ -34,9 +34,9 @@ export const ANVIL_KEYS = {
 } as const;
 
 export const LOCAL_CHAIN_ID = 31337;
+/** The pinned block needs historical state, so archive-serving endpoints come first. */
 const DEFAULT_FORK_URLS = [
-  "https://ethereum-sepolia-rpc.publicnode.com",
-  "https://sepolia.drpc.org",
+  "https://sepolia.gateway.tenderly.co",
   "https://1rpc.io/sepolia",
 ];
 
@@ -151,6 +151,7 @@ function forgeScript(
       "--private-key",
       ANVIL_KEYS.deployer,
       "--slow",
+      "--start-fresh", // a crashed earlier run must not block a new fork
       ...extra,
     ],
     {
