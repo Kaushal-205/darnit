@@ -17,7 +17,8 @@ function artifact(file, name) {
 function pick(abi, names) {
   const picked = abi.filter((x) => names.includes(x.name));
   for (const n of names) {
-    if (!picked.some((x) => x.name === n)) throw new Error(`missing ${n} in artifact`);
+    if (!picked.some((x) => x.name === n))
+      throw new Error(`missing ${n} in artifact`);
   }
   return picked;
 }
@@ -41,7 +42,9 @@ write(
   "contracts/out/FirewallErrors.sol/FirewallErrors.json + ExecutionDecoder.sol errors",
   [
     ...artifact("FirewallErrors.sol", "FirewallErrors"),
-    ...artifact("ExecutionDecoder.sol", "ExecutionDecoder").filter((x) => x.type === "error"),
+    ...artifact("ExecutionDecoder.sol", "ExecutionDecoder").filter(
+      (x) => x.type === "error",
+    ),
   ],
 );
 
@@ -49,30 +52,58 @@ write(
   "EntryPoint.ts",
   "EntryPointAbi",
   "contracts/out/IEntryPoint.sol/IEntryPoint.json (EntryPoint v0.7, events only)",
-  pick(artifact("IEntryPoint.sol", "IEntryPoint"), ["UserOperationEvent", "UserOperationRevertReason"]),
+  pick(artifact("IEntryPoint.sol", "IEntryPoint"), [
+    "UserOperationEvent",
+    "UserOperationRevertReason",
+  ]),
 );
 
 // Safe7579 events are not in any interface ModuleKit 0.5.9 compiles, so they are written out here.
 // Source: rhinestonewtf/safe7579 src/Safe7579.sol (emergencyUninstallHook) and
 // src/core/ExecutionHelper.sol (ExecutionFailed). See docs/decisions.md V10, V11.
-write("Safe7579.ts", "Safe7579Abi", "rhinestonewtf/safe7579 (hand-listed fragments)", [
-  {
-    type: "event",
-    name: "EmergencyHookUninstallRequest",
-    anonymous: false,
-    inputs: [
-      { name: "hook", type: "address", indexed: false, internalType: "address" },
-      { name: "time", type: "uint256", indexed: false, internalType: "uint256" },
-    ],
-  },
-  {
-    type: "event",
-    name: "EmergencyHookUninstallRequestReset",
-    anonymous: false,
-    inputs: [
-      { name: "hook", type: "address", indexed: false, internalType: "address" },
-      { name: "time", type: "uint256", indexed: false, internalType: "uint256" },
-    ],
-  },
-  { type: "error", name: "ExecutionFailed", inputs: [] },
-]);
+write(
+  "Safe7579.ts",
+  "Safe7579Abi",
+  "rhinestonewtf/safe7579 (hand-listed fragments)",
+  [
+    {
+      type: "event",
+      name: "EmergencyHookUninstallRequest",
+      anonymous: false,
+      inputs: [
+        {
+          name: "hook",
+          type: "address",
+          indexed: false,
+          internalType: "address",
+        },
+        {
+          name: "time",
+          type: "uint256",
+          indexed: false,
+          internalType: "uint256",
+        },
+      ],
+    },
+    {
+      type: "event",
+      name: "EmergencyHookUninstallRequestReset",
+      anonymous: false,
+      inputs: [
+        {
+          name: "hook",
+          type: "address",
+          indexed: false,
+          internalType: "address",
+        },
+        {
+          name: "time",
+          type: "uint256",
+          indexed: false,
+          internalType: "uint256",
+        },
+      ],
+    },
+    { type: "error", name: "ExecutionFailed", inputs: [] },
+  ],
+);

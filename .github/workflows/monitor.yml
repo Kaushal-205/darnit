@@ -1,0 +1,32 @@
+name: monitor
+on:
+  push:
+    branches: [main, m6-monitor]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.9.0
+      - run: pnpm install --frozen-lockfile
+      - run: forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts@v5.1.0 --no-git
+        working-directory: contracts
+      - run: forge build
+        working-directory: contracts
+      - run: pnpm --filter @session-firewall/monitor lint
+      - run: pnpm --filter @session-firewall/monitor typecheck
+      - run: pnpm --filter @session-firewall/monitor test
+      - run: pnpm --filter @session-firewall/monitor test:e2e

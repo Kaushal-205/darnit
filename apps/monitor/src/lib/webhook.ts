@@ -21,17 +21,32 @@ export const SIGNATURE_HEADER = "X-Firewall-Signature";
 export const EVENT_ID_HEADER = "X-Firewall-Event-Id";
 export const DEFAULT_TOLERANCE_SECONDS = 300;
 
-export function computeSignature(secret: string, timestamp: number, body: string): string {
-  return createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex");
+export function computeSignature(
+  secret: string,
+  timestamp: number,
+  body: string,
+): string {
+  return createHmac("sha256", secret)
+    .update(`${timestamp}.${body}`)
+    .digest("hex");
 }
 
-export function signWebhook(secret: string, body: string, timestamp = Math.floor(Date.now() / 1000)): string {
+export function signWebhook(
+  secret: string,
+  body: string,
+  timestamp = Math.floor(Date.now() / 1000),
+): string {
   return `t=${timestamp},v1=${computeSignature(secret, timestamp, body)}`;
 }
 
-export type VerifyResult = { ok: true; timestamp: number } | { ok: false; reason: string };
+export type VerifyResult =
+  | { ok: true; timestamp: number }
+  | { ok: false; reason: string };
 
-export function parseSignatureHeader(header: string): { t: number | null; v1: string[] } {
+export function parseSignatureHeader(header: string): {
+  t: number | null;
+  v1: string[];
+} {
   let t: number | null = null;
   const v1: string[] = [];
   for (const part of header.split(",")) {
@@ -57,15 +72,24 @@ export function verifyWebhookSignature(p: {
   if (v1.length === 0) return { ok: false, reason: "missing v1 signature" };
   const now = p.now ?? Math.floor(Date.now() / 1000);
   const tolerance = p.toleranceSeconds ?? DEFAULT_TOLERANCE_SECONDS;
-  if (Math.abs(now - t) > tolerance) return { ok: false, reason: "timestamp outside replay window" };
+  if (Math.abs(now - t) > tolerance)
+    return { ok: false, reason: "timestamp outside replay window" };
   const expected = Buffer.from(computeSignature(p.secret, t, p.body), "hex");
   const match = v1.some((s) => {
     const got = Buffer.from(s, "hex");
     return got.length === expected.length && timingSafeEqual(got, expected);
   });
-  return match ? { ok: true, timestamp: t } : { ok: false, reason: "signature mismatch" };
+  return match
+    ? { ok: true, timestamp: t }
+    : { ok: false, reason: "signature mismatch" };
 }
 
-export function deriveWebhookSecret(masterSecret: string, account: string, url: string): string {
-  return createHmac("sha256", masterSecret).update(`webhook:${account.toLowerCase()}:${url}`).digest("hex");
+export function deriveWebhookSecret(
+  masterSecret: string,
+  account: string,
+  url: string,
+): string {
+  return createHmac("sha256", masterSecret)
+    .update(`webhook:${account.toLowerCase()}:${url}`)
+    .digest("hex");
 }

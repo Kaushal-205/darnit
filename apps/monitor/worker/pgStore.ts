@@ -6,26 +6,48 @@ import { type Store, contactFromRow, contactTarget, hashKey } from "./store.ts";
  * Postgres store (Neon in production). Uses its own schema so it never collides with the tables
  * Ponder manages. Created on first start.
  */
-export function pgStore(p: { connectionString: string; schema?: string }): Store {
+export type Queryable = {
+  query<R extends Record<string, unknown>>(
+    sql: string,
+    params?: unknown[],
+  ): Promise<{ rows: R[]; rowCount?: number | null }>;
+  end(): Promise<void>;
+};
+
+export function pgStore(p: {
+  connectionString?: string;
+  pool?: Queryable;
+  schema?: string;
+}): Store {
   const schema = p.schema ?? "monitor_worker";
-  if (!/^[a-z_][a-z0-9_]*$/.test(schema)) throw new Error("WORKER_DB_SCHEMA must be a lowercase identifier");
-  const pool = new pg.Pool({ connectionString: p.connectionString, max: 5 });
+  if (!/^[a-z_][a-z0-9_]*$/.test(schema))
+    throw new Error("WORKER_DB_SCHEMA must be a lowercase identifier");
+  const pool: Queryable =
+    p.pool ??
+    (new pg.Pool({
+      connectionString: p.connectionString,
+      max: 5,
+    }) as unknown as Queryable);
   const t = (name: string) => `"${schema}"."${name}"`;
 
   return {
     async init() {
-      await pool.query(`
-        CREATE SCHEMA IF NOT EXISTS "${schema}";
-        CREATE TABLE IF NOT EXISTS ${t("subscription")} (
-          account text NOT NULL,
-          type text NOT NULL,
-          target text NOT NULL,
-          PRIMARY KEY (account, type, target)
-        );
-        CREATE TABLE IF NOT EXISTS ${t("delivery")} (key text PRIMARY KEY, at bigint NOT NULL);
-        CREATE TABLE IF NOT EXISTS ${t("nonce")} (key text PRIMARY KEY, expires_at bigint NOT NULL);
-        CREATE TABLE IF NOT EXISTS ${t("cursor")} (id int PRIMARY KEY, block bigint NOT NULL);
-      `);
+      await pool.query(`CREATE SCHEMA IF NOT EXISTS "${schema}"`);
+      await pool.query(`CREATE TABLE IF NOT EXISTS ${t("subscription")} (
+        account text NOT NULL,
+        type text NOT NULL,
+        target text NOT NULL,
+        PRIMARY KEY (account, type, target)
+      )`);
+      await pool.query(
+        `CREATE TABLE IF NOT EXISTS ${t("delivery")} (key text PRIMARY KEY, at bigint NOT NULL)`,
+      );
+      await pool.query(
+        `CREATE TABLE IF NOT EXISTS ${t("nonce")} (key text PRIMARY KEY, expires_at bigint NOT NULL)`,
+      );
+      await pool.query(
+        `CREATE TABLE IF NOT EXISTS ${t("cursor")} (id int PRIMARY KEY, block bigint NOT NULL)`,
+      );
     },
     async addSubscriptions(account, contacts) {
       for (const c of contacts) {
@@ -37,16 +59,18 @@ export function pgStore(p: { connectionString: string; schema?: string }): Store
     },
     async removeSubscriptions(account, contacts) {
       if (contacts === null) {
-        const r = await pool.query(`DELETE FROM ${t("subscription")} WHERE account = $1`, [account.toLowerCase()]);
+        const r = await pool.query(
+          `DELETE FROM ${t("subscription")} WHERE account = $1`,
+          [account.toLowerCase()],
+        );
         return r.rowCount ?? 0;
       }
       let n = 0;
       for (const c of contacts) {
-        const r = await pool.query(`DELETE FROM ${t("subscription")} WHERE account = $1 AND type = $2 AND target = $3`, [
-          account.toLowerCase(),
-          c.type,
-          contactTarget(c),
-        ]);
+        const r = await pool.query(
+          `DELETE FROM ${t("subscription")} WHERE account = $1 AND type = $2 AND target = $3`,
+          [account.toLowerCase(), c.type, contactTarget(c)],
+        );
         n += r.rowCount ?? 0;
       }
       return n;
@@ -56,17 +80,27 @@ export function pgStore(p: { connectionString: string; schema?: string }): Store
         `SELECT type, target FROM ${t("subscription")} WHERE account = $1`,
         [account.toLowerCase()],
       );
-      return r.rows.map((row) => contactFromRow(row.type, row.target)).filter((c): c is Contact => c !== null);
+      return r.rows
+        .map((row) => contactFromRow(row.type, row.target))
+        .filter((c): c is Contact => c !== null);
     },
     async wasDelivered(key) {
-      const r = await pool.query(`SELECT 1 FROM ${t("delivery")} WHERE key = $1`, [hashKey(key)]);
+      const r = await pool.query(
+        `SELECT 1 FROM ${t("delivery")} WHERE key = $1`,
+        [hashKey(key)],
+      );
       return (r.rowCount ?? 0) > 0;
     },
     async markDelivered(key, at) {
-      await pool.query(`INSERT INTO ${t("delivery")} (key, at) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [hashKey(key), at]);
+      await pool.query(
+        `INSERT INTO ${t("delivery")} (key, at) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        [hashKey(key), at],
+      );
     },
     async getCursor() {
-      const r = await pool.query<{ block: string }>(`SELECT block FROM ${t("cursor")} WHERE id = 1`);
+      const r = await pool.query<{ block: string | number }>(
+        `SELECT block FROM ${t("cursor")} WHERE id = 1`,
+      );
       return r.rows[0] ? BigInt(r.rows[0].block) : 0n;
     },
     async setCursor(block) {
@@ -76,15 +110,17 @@ export function pgStore(p: { connectionString: string; schema?: string }): Store
       );
     },
     async useNonce(nonce, expiresAt) {
-      const r = await pool.query(`INSERT INTO ${t("nonce")} (key, expires_at) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [
-        hashKey(nonce),
-        expiresAt,
-      ]);
+      const r = await pool.query(
+        `INSERT INTO ${t("nonce")} (key, expires_at) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        [hashKey(nonce), expiresAt],
+      );
       return (r.rowCount ?? 0) === 1;
     },
     async prune(before) {
       await pool.query(`DELETE FROM ${t("delivery")} WHERE at < $1`, [before]);
-      await pool.query(`DELETE FROM ${t("nonce")} WHERE expires_at < $1`, [before]);
+      await pool.query(`DELETE FROM ${t("nonce")} WHERE expires_at < $1`, [
+        before,
+      ]);
     },
     async close() {
       await pool.end();

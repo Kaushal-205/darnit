@@ -1,6 +1,18 @@
 import type { Address, Hex } from "viem";
-import { type AlertRecord, type RenderedAlert, type RuleName, type Severity, dedupeKey, renderAlert } from "../src/lib/rules.ts";
-import { type Channel, type Contact, type ContactType, contactKey } from "./channels.ts";
+import {
+  type AlertRecord,
+  type RenderedAlert,
+  type RuleName,
+  type Severity,
+  dedupeKey,
+  renderAlert,
+} from "../src/lib/rules.ts";
+import {
+  type Channel,
+  type Contact,
+  type ContactType,
+  contactKey,
+} from "./channels.ts";
 import { type RateLimiter, rateLimiter } from "./rateLimit.ts";
 import type { Store } from "./store.ts";
 
@@ -29,26 +41,68 @@ export function parseAlertJson(r: AlertJson): AlertRecord {
   };
 }
 
-export function httpSource(indexerUrl: string, f: typeof fetch = fetch): AlertSource {
+const PAGE = 1_000;
+const MAX_BACKOFF_SECONDS = 300;
+
+export function httpSource(
+  indexerUrl: string,
+  f: typeof fetch = fetch,
+): AlertSource {
   const base = indexerUrl.replace(/\/+$/, "");
   return {
     async fetch(fromBlock) {
-      const res = await f(`${base}/alerts?fromBlock=${fromBlock}&limit=1000`, { signal: AbortSignal.timeout(10_000) });
-      if (!res.ok) throw new Error(`indexer /alerts: HTTP ${res.status}`);
-      return ((await res.json()) as AlertJson[]).map(parseAlertJson);
+      // Reads every page: a flood of low-severity rows must not hide a later critical one.
+      const out: AlertRecord[] = [];
+      for (;;) {
+        const url = `${base}/alerts?fromBlock=${fromBlock}&limit=${PAGE}&offset=${out.length}`;
+        const res = await f(url, { signal: AbortSignal.timeout(10_000) });
+        if (!res.ok) throw new Error(`indexer /alerts: HTTP ${res.status}`);
+        const rows = (await res.json()) as AlertJson[];
+        out.push(...rows.map(parseAlertJson));
+        if (rows.length < PAGE) return out;
+      }
     },
   };
 }
 
-export type Logger = { info(msg: string, extra?: unknown): void; warn(msg: string, extra?: unknown): void };
+export type Logger = {
+  info(msg: string, extra?: unknown): void;
+  warn(msg: string, extra?: unknown): void;
+};
 const consoleLogger: Logger = {
-  info: (m, e) => console.log(JSON.stringify({ level: "info", msg: m, ...(e ? { extra: e } : {}) })),
-  warn: (m, e) => console.warn(JSON.stringify({ level: "warn", msg: m, ...(e ? { extra: String(e) } : {}) })),
+  info: (m, e) =>
+    console.log(
+      JSON.stringify({ level: "info", msg: m, ...(e ? { extra: e } : {}) }),
+    ),
+  warn: (m, e) =>
+    console.warn(
+      JSON.stringify({
+        level: "warn",
+        msg: m,
+        ...(e ? { extra: String(e) } : {}),
+      }),
+    ),
 };
 
-type Pending = { alert: RenderedAlert; account: string; contact: Contact; key: string; attempts: number; nextAt: number };
+type Pending = {
+  alert: RenderedAlert;
+  account: string;
+  contact: Contact;
+  key: string;
+  attempts: number;
+  nextAt: number;
+  blockNumber: bigint;
+  expiresAt: bigint;
+};
 
-export type DispatchStats = { fetched: number; sent: number; expired: number; duplicate: number; suppressed: number; failed: number };
+export type DispatchStats = {
+  fetched: number;
+  sent: number;
+  expired: number;
+  duplicate: number;
+  suppressed: number;
+  failed: number;
+};
 
 export function createDispatcher(p: {
   store: Store;
@@ -60,6 +114,7 @@ export function createDispatcher(p: {
   now?: () => number;
   /** Blocks re-read behind the cursor on every poll, to pick up rows rewritten after a reorg. */
   reorgSlack?: bigint;
+  /** Attempts for warning and info alerts. Critical and high alerts retry until they expire. */
   maxAttempts?: number;
   log?: Logger;
   onSent?: (alert: RenderedAlert, contact: Contact) => void;
@@ -76,7 +131,11 @@ export function createDispatcher(p: {
   async function attempt(job: Pending, stats: DispatchStats) {
     const channel = p.channels[job.contact.type];
     if (!channel) {
-      log.warn(`no ${job.contact.type} channel configured; dropping`, job.alert.id);
+      log.warn(
+        `no ${job.contact.type} channel configured; dropping`,
+        job.alert.id,
+      );
+      await p.store.markDelivered(job.key, now());
       pending.delete(job.key);
       return;
     }
@@ -88,26 +147,45 @@ export function createDispatcher(p: {
       p.onSent?.(job.alert, job.contact);
     } catch (err) {
       job.attempts++;
-      if (job.attempts >= maxAttempts) {
+      const urgent =
+        job.alert.severity === "critical" || job.alert.severity === "high";
+      const exhausted = urgent
+        ? BigInt(now()) > job.expiresAt
+        : job.attempts >= maxAttempts;
+      if (exhausted) {
         // Terminal: recorded so the alert is not picked up again from the reorg slack.
         await p.store.markDelivered(job.key, now());
         pending.delete(job.key);
         stats.failed++;
-        log.warn(`giving up on ${job.alert.id} via ${job.contact.type} after ${job.attempts} attempts`, err);
+        log.warn(
+          `giving up on ${job.alert.id} via ${job.contact.type} after ${job.attempts} attempts`,
+          err,
+        );
       } else {
-        job.nextAt = now() + 2 ** job.attempts; // 2, 4, 8, 16 s
+        job.nextAt = now() + Math.min(2 ** job.attempts, MAX_BACKOFF_SECONDS);
         pending.set(job.key, job);
-        log.warn(`delivery of ${job.alert.id} via ${job.contact.type} failed; retrying`, err);
+        log.warn(
+          `delivery of ${job.alert.id} via ${job.contact.type} failed; retrying`,
+          err,
+        );
       }
     }
   }
 
   async function tick(): Promise<DispatchStats> {
-    const stats: DispatchStats = { fetched: 0, sent: 0, expired: 0, duplicate: 0, suppressed: 0, failed: 0 };
+    const stats: DispatchStats = {
+      fetched: 0,
+      sent: 0,
+      expired: 0,
+      duplicate: 0,
+      suppressed: 0,
+      failed: 0,
+    };
     const t = now();
     const jobs: Promise<void>[] = [];
 
-    for (const job of pending.values()) if (job.nextAt <= t) jobs.push(attempt(job, stats));
+    for (const job of pending.values())
+      if (job.nextAt <= t) jobs.push(attempt(job, stats));
 
     const cursor = await p.store.getCursor();
     const from = cursor > slack ? cursor - slack : 0n;
@@ -138,14 +216,29 @@ export function createDispatcher(p: {
         }
         const rendered = renderAlert(a, p.appUrl);
         const skipped = limiter.takeSuppressed(limitKey);
-        if (skipped > 0) rendered.lines.push(`(${skipped} lower-priority alert(s) for this account were rate-limited.)`);
-        const job: Pending = { alert: rendered, account: a.account, contact, key, attempts: 0, nextAt: t };
+        if (skipped > 0)
+          rendered.lines.push(
+            `(${skipped} lower-priority alert(s) for this account were rate-limited.)`,
+          );
+        const job: Pending = {
+          alert: rendered,
+          account: a.account,
+          contact,
+          key,
+          attempts: 0,
+          nextAt: t,
+          blockNumber: a.blockNumber,
+          expiresAt: a.expiresAt,
+        };
         pending.set(key, job);
         jobs.push(attempt(job, stats));
       }
     }
 
     await Promise.all(jobs);
+    // Unsent alerts live in memory, so the cursor stays behind them: a restart reads them again.
+    for (const job of pending.values())
+      if (job.blockNumber < maxBlock) maxBlock = job.blockNumber;
     if (maxBlock > cursor) await p.store.setCursor(maxBlock);
     return stats;
   }

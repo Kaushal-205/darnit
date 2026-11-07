@@ -13,9 +13,9 @@
     "worker": "node --experimental-strip-types worker/main.ts",
     "codegen": "ponder codegen",
     "typecheck": "ponder codegen && tsc --noEmit",
-    "lint": "biome check .",
+    "lint": "biome check abis src worker test scripts ponder.config.ts ponder.schema.ts ponder-env.d.ts package.json tsconfig.json",
     "test": "vitest run test/unit",
-    "test:e2e": "vitest run test/e2e"
+    "test:e2e": "vitest run test/e2e --disable-console-intercept"
   },
   "dependencies": {
     "@hono/node-server": "1.19.5",
@@ -25,6 +25,7 @@
     "viem": "2.57.4"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.2.13",
     "@types/node": "22.19.21",
     "@types/pg": "8.15.5",
     "typescript": "5.9.3",

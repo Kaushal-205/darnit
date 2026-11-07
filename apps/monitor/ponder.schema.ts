@@ -3,7 +3,11 @@ import { index, onchainEnum, onchainTable, primaryKey } from "ponder";
 // Everything here is public chain data. Contact details (subscriptions) live in the worker's own
 // tables (worker/pgStore.ts), never in the indexer.
 
-export const changeStatus = onchainEnum("change_status", ["queued", "executed", "cancelled"]);
+export const changeStatus = onchainEnum("change_status", [
+  "queued",
+  "executed",
+  "cancelled",
+]);
 
 /** One row per account that ever called FirewallModule.onInstall. */
 export const account = onchainTable("account", (t) => ({
@@ -50,6 +54,20 @@ export const budgetConsumption = onchainTable(
     txHash: t.hex().notNull(),
   }),
   (table) => ({ windowIdx: index().on(table.account, table.timestamp) }),
+);
+
+/** DestinationRemoved, MarketRemoved, SessionCreated, SessionRemoved: history only, no alert rule. */
+export const moduleEvent = onchainTable(
+  "module_event",
+  (t) => ({
+    id: t.text().primaryKey(),
+    account: t.hex().notNull(),
+    name: t.text().notNull(),
+    detail: t.json().$type<Record<string, string>>().notNull(),
+    timestamp: t.bigint().notNull(),
+    txHash: t.hex().notNull(),
+  }),
+  (table) => ({ accountIdx: index().on(table.account) }),
 );
 
 /** UserOperationRevertReason for a firewall account. */

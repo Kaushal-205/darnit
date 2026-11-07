@@ -78,20 +78,32 @@ export function evaluateBudgetWindow(p: {
   const threshold = p.thresholdBps ?? 8_000n;
   const from = p.now - window;
   let used = 0n;
-  for (const e of p.entries) if (e.timestamp > from && e.timestamp <= p.now) used += e.amount;
-  const usedBps = p.cap === 0n ? (used > 0n ? 1_000_000n : 0n) : (used * 10_000n) / p.cap;
+  for (const e of p.entries)
+    if (e.timestamp > from && e.timestamp <= p.now) used += e.amount;
+  const usedBps =
+    p.cap === 0n ? (used > 0n ? 1_000_000n : 0n) : (used * 10_000n) / p.cap;
   // A frozen / zero-cap account cannot consume (consume reverts), so cap 0 never fires.
   const over = p.cap > 0n && used * 10_000n > threshold * p.cap;
   const cooledDown = p.lastAlertAt === null || p.now - p.lastAlertAt >= window;
   return { fire: over && cooledDown, used, usedBps };
 }
 
-export function budgetAlert(p: { account: Address; used: bigint; cap: bigint; usedBps: bigint; now: bigint }): AlertDraft {
+export function budgetAlert(p: {
+  account: Address;
+  used: bigint;
+  cap: bigint;
+  usedBps: bigint;
+  now: bigint;
+}): AlertDraft {
   return {
     rule: "budget_80",
     severity: "warning",
     account: p.account,
-    facts: { used: p.used.toString(), cap: p.cap.toString(), usedBps: p.usedBps.toString() },
+    facts: {
+      used: p.used.toString(),
+      cap: p.cap.toString(),
+      usedBps: p.usedBps.toString(),
+    },
     expiresAt: p.now + HOUR,
   };
 }
@@ -127,7 +139,11 @@ export function blockedAttemptAlert(p: {
 
 export const EMERGENCY_TIMELOCK = DAY;
 
-export function emergencyUninstallAlert(p: { account: Address; hook: Address; time: bigint }): AlertDraft {
+export function emergencyUninstallAlert(p: {
+  account: Address;
+  hook: Address;
+  time: bigint;
+}): AlertDraft {
   return {
     rule: "emergency_uninstall",
     severity: "critical",
@@ -145,10 +161,20 @@ export function emergencyUninstallAlert(p: { account: Address; hook: Address; ti
 // -------------------------------------------------------------------- rule 5: informational
 
 export function freezeAlert(p: { account: Address; now: bigint }): AlertDraft {
-  return { rule: "freeze", severity: "info", account: p.account, facts: {}, expiresAt: p.now + HOUR };
+  return {
+    rule: "freeze",
+    severity: "info",
+    account: p.account,
+    facts: {},
+    expiresAt: p.now + HOUR,
+  };
 }
 
-export function sessionsRevokedAlert(p: { account: Address; epoch: bigint; now: bigint }): AlertDraft {
+export function sessionsRevokedAlert(p: {
+  account: Address;
+  epoch: bigint;
+  now: bigint;
+}): AlertDraft {
   return {
     rule: "sessions_revoked",
     severity: "info",
@@ -201,7 +227,9 @@ export function links(appUrl: string, account: Address) {
 
 function iso(unix: unknown): string {
   const n = Number(unix);
-  return Number.isFinite(n) ? new Date(n * 1000).toISOString().replace(".000Z", "Z") : String(unix);
+  return Number.isFinite(n)
+    ? new Date(n * 1000).toISOString().replace(".000Z", "Z")
+    : String(unix);
 }
 
 function usdc(v: unknown): string {
@@ -212,7 +240,10 @@ function usdc(v: unknown): string {
   }
 }
 
-export function renderAlert(record: AlertRecord, appUrl: string): RenderedAlert {
+export function renderAlert(
+  record: AlertRecord,
+  appUrl: string,
+): RenderedAlert {
   // The indexer stores lowercase addresses; show checksummed ones.
   const a = { ...record, account: getAddress(record.account) };
   const l = links(appUrl, a.account);
@@ -249,7 +280,9 @@ export function renderAlert(record: AlertRecord, appUrl: string): RenderedAlert 
       lines = [
         String(f.description),
         `User operation ${String(f.userOpHash)} (nonce ${String(f.nonce)}).`,
-        ...(f.errorKind === "unknown" ? [`Raw reason: ${String(f.rawReason)}`] : []),
+        ...(f.errorKind === "unknown"
+          ? [`Raw reason: ${String(f.rawReason)}`]
+          : []),
         "If a session key did this, it may be compromised. Freezing revokes every session.",
       ];
       ls = [{ label: "Freeze account", url: l.freeze }];
@@ -265,7 +298,9 @@ export function renderAlert(record: AlertRecord, appUrl: string): RenderedAlert 
       break;
     case "freeze":
       title = `Account ${a.account} frozen`;
-      lines = ["The firewall froze the account: the cap is 0 and every session is revoked. Unfreezing takes 24 hours."];
+      lines = [
+        "The firewall froze the account: the cap is 0 and every session is revoked. Unfreezing takes 24 hours.",
+      ];
       ls = [{ label: "Settings", url: l.settings }];
       break;
     case "sessions_revoked":
@@ -292,7 +327,9 @@ export function renderAlert(record: AlertRecord, appUrl: string): RenderedAlert 
  * Semantic dedupe key: the same on-chain fact gives the same key even if a reorg re-includes the
  * transaction in another block (which changes the Ponder event id and so the alert id).
  */
-export function dedupeKey(a: Pick<AlertRecord, "rule" | "account" | "facts" | "txHash">): string {
+export function dedupeKey(
+  a: Pick<AlertRecord, "rule" | "account" | "facts" | "txHash">,
+): string {
   const f = a.facts;
   const acct = a.account.toLowerCase();
   switch (a.rule) {
@@ -310,5 +347,13 @@ export function dedupeKey(a: Pick<AlertRecord, "rule" | "account" | "facts" | "t
 }
 
 export function alertText(r: RenderedAlert): string {
-  return [r.title, "", ...r.lines, "", ...r.links.map((x) => `${x.label}: ${x.url}`), "", `Tx: ${r.txHash}`].join("\n");
+  return [
+    r.title,
+    "",
+    ...r.lines,
+    "",
+    ...r.links.map((x) => `${x.label}: ${x.url}`),
+    "",
+    `Tx: ${r.txHash}`,
+  ].join("\n");
 }

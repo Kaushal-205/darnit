@@ -11,7 +11,12 @@ const env = parseIndexerEnv(process.env);
 // Database: Postgres when DATABASE_URL is set (Neon in production), PGlite in .ponder/ otherwise.
 export default createConfig({
   ...(!process.env.DATABASE_URL && process.env.PGLITE_DIR
-    ? { database: { kind: "pglite" as const, directory: process.env.PGLITE_DIR } }
+    ? {
+        database: {
+          kind: "pglite" as const,
+          directory: process.env.PGLITE_DIR,
+        },
+      }
     : {}),
   chains: {
     chain: {

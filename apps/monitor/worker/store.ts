@@ -9,7 +9,10 @@ export type Store = {
   init(): Promise<void>;
   addSubscriptions(account: string, contacts: Contact[]): Promise<void>;
   /** Removes the given contacts, or every contact of the account when `contacts` is null. */
-  removeSubscriptions(account: string, contacts: Contact[] | null): Promise<number>;
+  removeSubscriptions(
+    account: string,
+    contacts: Contact[] | null,
+  ): Promise<number>;
   subscriptionsFor(account: string): Promise<Contact[]>;
   /** Dedupe: true when `key` was already delivered. */
   wasDelivered(key: string): Promise<boolean>;
@@ -23,7 +26,8 @@ export type Store = {
   close(): Promise<void>;
 };
 
-export const hashKey = (k: string) => createHash("sha256").update(k).digest("hex");
+export const hashKey = (k: string) =>
+  createHash("sha256").update(k).digest("hex");
 
 export function contactFromRow(type: string, target: string): Contact | null {
   if (type === "email") return { type, to: target };
@@ -33,7 +37,11 @@ export function contactFromRow(type: string, target: string): Contact | null {
 }
 
 export function contactTarget(c: Contact): string {
-  return c.type === "email" ? c.to.toLowerCase() : c.type === "telegram" ? c.chatId : c.url;
+  return c.type === "email"
+    ? c.to.toLowerCase()
+    : c.type === "telegram"
+      ? c.chatId
+      : c.url;
 }
 
 export function memoryStore(): Store {

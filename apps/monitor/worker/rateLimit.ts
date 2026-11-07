@@ -12,7 +12,9 @@ export type RateLimiter = {
   takeSuppressed(key: string): number;
 };
 
-export function rateLimiter(p: { max?: number; windowSeconds?: number } = {}): RateLimiter {
+export function rateLimiter(
+  p: { max?: number; windowSeconds?: number } = {},
+): RateLimiter {
   const max = p.max ?? 10;
   const window = p.windowSeconds ?? 3_600;
   const sent = new Map<string, number[]>();

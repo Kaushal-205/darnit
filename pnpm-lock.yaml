@@ -30,6 +30,9 @@ importers:
         specifier: 2.57.4
         version: 2.57.4(typescript@5.9.3)
     devDependencies:
+      '@electric-sql/pglite':
+        specifier: 0.2.13
+        version: 0.2.13
       '@types/node':
         specifier: 22.19.21
         version: 22.19.21

@@ -47,3 +47,20 @@ The optional monitor stores only account addresses and the contact details you g
 ## License
 
 MIT, except `contracts/test/fixtures/Safe7579Head.sol`, which is GPL-3.0: it holds upstream Safe7579 bytecode, used only by tests and never deployed.
+
+Monitor setup, privacy, and alert verification: [apps/monitor/README.md](apps/monitor/README.md).
+
+## CROPS
+
+**Lead property: S — security enforced onchain.** A compromised trading session cannot replace the rules,
+approve an unknown spender, or send tracked funds to an unregistered address. The hook and budget run
+for every account execution without an application server authorizing it; the SDK fork demo checks both
+normal trading and the blocked-drain moment. See `docs/decisions.md` for the boundaries.
+
+- **C:** We operate the app domain and optional alert server; contract checks and owner exits need neither server. RPC and bundler are user-configurable. Browser passkeys remain RP-domain-bound: independent-origin recovery must be enrolled and tested before claiming that domain loss cannot strand a user.
+- **O:** MIT, except the GPL-3.0 upstream test fixture noted below; dependencies retain their licenses. Anyone can build and run the available code with the repo, free tools and an RPC; local tests need no hosted service credentials.
+- **P:** RPCs/bundlers learn IP, addresses and calls; chain/indexer data is public and hosts see requests. The opt-in monitor stores address/contact details for delivery; providers receive relevant alerts. No client analytics or trackers are implemented; browser bundle verification is a gate for M5.
+- **S:** User passkeys and session keys belong on the user's device; the monitor has no spending key. Security trusts deployed code, registered adapters/markets, standard USDC, chain execution and credential security. Contracts are unaudited; RPC/bundler availability and alert delivery remain external assumptions.
+
+The local software authenticator is a test fixture, not a place to keep real keys. Public-testnet deployment,
+real-browser UX, independent-origin recovery, and the <=3-minute submission video remain release gates.
