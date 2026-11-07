@@ -18,7 +18,17 @@ export const ALLOWED_TEXT_ORIGINS = {
   "http://www.w3.org": "XML namespaces used by the DOM",
   "http://localhost": "viem/Next.js URL parsing placeholder, never third-party",
   "http://n": "Next.js internal URL parsing base, never requested",
+  "http://127.0.0.1": "this machine (local demo RPC), never third-party",
   "http://a.com": "URL parsing feature test in a polyfill, never requested",
+  "https://a": "URL parsing feature test in the polyfill chunk, never requested",
+  "https://x": "URL parsing feature test in the polyfill chunk, never requested",
+  "http://f": "URL parsing placeholder in Next.js main chunk, never requested",
+  "http://.": "fragment of a URL-matching regular expression in viem, not a URL",
+  "https://ipfs.io": "viem ENS avatar gateway default; the app never calls getEnsAvatar",
+  "https://arweave.net": "viem ENS avatar gateway default; the app never calls getEnsAvatar",
+  "https://4byte.sourcify.dev": "link printed in viem error messages, never requested",
+  "https://docs.soliditylang.org": "link printed in viem error messages, never requested",
+  "https://tailwindcss.com": "license comment in the compiled stylesheet",
   "https://ethereum-sepolia-rpc.publicnode.com": "connect: default RPC in runtime-config.json",
   "https://sepolia.etherscan.io": "connect: explorer link base in runtime-config.json",
 };
@@ -28,15 +38,19 @@ const URL_RE = /\b(?:https?|wss?):\/\/[a-zA-Z0-9.-]+(?::\d+)?/g;
 const LOADING_RES = [
   /<(?:script|img|iframe|audio|video|source|embed)\b[^>]*\bsrc=["']?((?:https?:)?\/\/[^"'\s>]+)/gi,
   /<link\b[^>]*\bhref=["']?((?:https?:)?\/\/[^"'\s>]+)/gi,
+  /importScripts\(\s*["']((?:https?:)?\/\/[^"']+)/gi,
+];
+/** Stylesheet loads. Only for CSS and HTML: in JS, `new URL("...")` would look like url(...). */
+const STYLE_RES = [
   /url\(\s*["']?((?:https?:)?\/\/[^"')\s]+)/gi,
   /@import\s+(?:url\()?["']?((?:https?:)?\/\/[^"')\s]+)/gi,
-  /importScripts\(\s*["']((?:https?:)?\/\/[^"']+)/gi,
 ];
 
 /** @returns {{ file: string, url: string, reason: string }[]} */
 export function scanText(file, text, allowed = ALLOWED_TEXT_ORIGINS) {
   const problems = [];
-  for (const re of LOADING_RES) {
+  const res = /\.(css|html)$/.test(file) ? [...LOADING_RES, ...STYLE_RES] : LOADING_RES;
+  for (const re of res) {
     for (const m of text.matchAll(re))
       problems.push({ file, url: m[1], reason: "loaded by the browser" });
   }

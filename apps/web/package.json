@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build --webpack && node scripts/postbuild.mjs out",
+    "build": "NEXT_TELEMETRY_DISABLED=1 next build --webpack && node scripts/postbuild.mjs out",
     "check:origins": "node scripts/check-origins.mjs out",
     "serve": "node scripts/serve.mjs",
     "demo": "tsx scripts/demo-web.ts",

@@ -1,6 +1,6 @@
 import { cancelChange, executeChange, exit, freeze, lowerCap, queueChange } from "@session-firewall/sdk";
 import { useState } from "react";
-import { getAddress, isAddress } from "viem";
+import { type Address, getAddress, isAddress } from "viem";
 import { formatDate, formatEta, formatUsd, parseAmount } from "../lib/format";
 import { useApp } from "./context";
 import { Button, Card, Field, Stat } from "./ui";
@@ -15,7 +15,7 @@ export function SettingsScreen() {
   if (!snap) return <Card>Loading your settings…</Card>;
   const lowered = parseAmount(newCap);
   const raised = parseAmount(raiseCap);
-  const to = exitTo || snap.destinations[0];
+  const to = (exitTo || snap.destinations[0]) as Address | undefined;
   const exitValue = exitAmount ? parseAmount(exitAmount) : snap.usdc;
 
   return (

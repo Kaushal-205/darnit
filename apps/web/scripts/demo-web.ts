@@ -184,7 +184,7 @@ const config: RuntimeConfig = {
 // Written to the served folder only: the source runtime-config.json stays the public default.
 writeFileSync(join(outDir, "runtime-config.json"), serializeRuntimeConfig(config));
 
-const { serve } = (await import("./serve.mjs")) as unknown as {
+const { serve } = (await import("./serve.mjs" as string)) as {
   serve: (o: { dir: string; port: number }) => Promise<unknown>;
 };
 await serve({ dir: outDir, port: PORT });
