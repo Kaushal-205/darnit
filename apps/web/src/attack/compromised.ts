@@ -38,7 +38,13 @@ export const ATTACKER: Address = getAddress(
   slice(keccak256(stringToHex("session-firewall demo attacker")), 12),
 );
 
-export type AttemptStatus = "pending" | "running" | "blocked" | "not-blocked" | "not-signed" | "error";
+export type AttemptStatus =
+  | "pending"
+  | "running"
+  | "blocked"
+  | "not-blocked"
+  | "not-signed"
+  | "error";
 
 export type Attempt = {
   id: string;
@@ -75,7 +81,9 @@ export type AttackContext = {
   };
 };
 
-export async function snapshotFunds(ctx: AttackContext): Promise<FundsSnapshot> {
+export async function snapshotFunds(
+  ctx: AttackContext,
+): Promise<FundsSnapshot> {
   const { publicClient } = ctx.account.client;
   const { market } = ctx;
   const usdc = (who: Address) =>
@@ -93,7 +101,14 @@ export async function snapshotFunds(ctx: AttackContext): Promise<FundsSnapshot> 
       args: [who, id],
     });
   const me = ctx.account.address;
-  const [accountUsdc, accountYes, accountNo, attackerUsdc, attackerYes, attackerNo] = await Promise.all([
+  const [
+    accountUsdc,
+    accountYes,
+    accountNo,
+    attackerUsdc,
+    attackerYes,
+    attackerNo,
+  ] = await Promise.all([
     usdc(me),
     share(me, market.yesId),
     share(me, market.noId),
@@ -101,7 +116,14 @@ export async function snapshotFunds(ctx: AttackContext): Promise<FundsSnapshot> 
     share(ATTACKER, market.yesId),
     share(ATTACKER, market.noId),
   ]);
-  return { accountUsdc, accountYes, accountNo, attackerUsdc, attackerYes, attackerNo };
+  return {
+    accountUsdc,
+    accountYes,
+    accountNo,
+    attackerUsdc,
+    attackerYes,
+    attackerNo,
+  };
 }
 
 /** True when every balance is identical: the attacker gained nothing and the account lost nothing. */
@@ -168,14 +190,19 @@ export async function runCompromisedScript(
   const { account, market } = ctx;
   // What an injected script does first: read the key straight out of IndexedDB.
   const stolen = (await listSessions(account.address))[0];
-  if (!stolen) throw new Error("No session key on this device to steal. Start a trading session first.");
+  if (!stolen)
+    throw new Error(
+      "No session key on this device to steal. Start a trading session first.",
+    );
   const balance = await account.client.publicClient.readContract({
     address: market.usdc,
     abi: mockUsdcAbi,
     functionName: "balanceOf",
     args: [account.address],
   });
-  const ask = market.orders.find((o) => o.order.side === ORDER_SIDE.Sell && o.order.tokenId === market.yesId);
+  const ask = market.orders.find(
+    (o) => o.order.side === ORDER_SIDE.Sell && o.order.tokenId === market.yesId,
+  );
   const install = encodeFunctionData({
     abi: safe7579Abi,
     functionName: "installModule",
@@ -210,8 +237,12 @@ export async function runCompromisedScript(
         { to: market.address, data: encodeFill(ask, 10_000_000n, ATTACKER) },
       ]);
     },
-    A9: () => executeAsSession(account, stolen, [{ to: account.address, data: install }]),
-    "A9-passkey": () => executeAsOwner(account, [{ to: account.address, data: install }]),
+    A9: () =>
+      executeAsSession(account, stolen, [
+        { to: account.address, data: install },
+      ]),
+    "A9-passkey": () =>
+      executeAsOwner(account, [{ to: account.address, data: install }]),
   };
   const known: KnownAddresses = {
     usdc: market.usdc,
@@ -239,7 +270,11 @@ export async function runCompromisedScript(
       const notSigned = /passkey prompt/i.test(plain.message);
       done = {
         ...attempt,
-        status: plain.blockedByFirewall ? "blocked" : notSigned ? "not-signed" : "error",
+        status: plain.blockedByFirewall
+          ? "blocked"
+          : notSigned
+            ? "not-signed"
+            : "error",
         message: plain.message,
         code: plain.code,
         mined: !!plain.transactionHash,

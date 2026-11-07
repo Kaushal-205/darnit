@@ -26,10 +26,14 @@ import type { NetworkSettings } from "./settings";
 
 export const TEST_USDC = 10_000_000_000n; // $10,000
 
-export function validateOnboarding(destination: string, hourlyCap: bigint | undefined): string | undefined {
+export function validateOnboarding(
+  destination: string,
+  hourlyCap: bigint | undefined,
+): string | undefined {
   if (!isAddress(destination, { strict: false }))
     return "Enter the full address of the Safe you want to withdraw to (it starts with 0x).";
-  if (!hourlyCap) return "Enter the most this app may lose per hour, in dollars.";
+  if (!hourlyCap)
+    return "Enter the most this app may lose per hour, in dollars.";
   return undefined;
 }
 
@@ -47,7 +51,9 @@ export async function deployAccount(p: {
   const params = {
     owner: passkeyOwnerFor(passkey, deployment.addresses.ownerValidator),
     destinations: [p.destination],
-    markets: [{ market: deployment.market.address, adapter: deployment.market.adapter }],
+    markets: [
+      { market: deployment.market.address, adapter: deployment.market.adapter },
+    ],
     tokens: [deployment.market.usdc],
     hourlyCap: p.hourlyCap,
     // One account per passkey: the address does not depend on the other choices, so a retry finds it again.
@@ -99,7 +105,8 @@ export async function localMintUsdc(
   to: Address,
   amount: bigint = TEST_USDC,
 ): Promise<void> {
-  if (!config.local) throw new Error("Test funds exist only in the local demo.");
+  if (!config.local)
+    throw new Error("Test funds exist only in the local demo.");
   const chain = chainOf(config, settings.rpcUrl);
   const wallet = createWalletClient({
     chain,
@@ -112,7 +119,11 @@ export async function localMintUsdc(
     functionName: "mint",
     args: [to, amount],
   });
-  await createPublicClient({ chain, transport: http(settings.rpcUrl), pollingInterval: 300 }).waitForTransactionReceipt({
+  await createPublicClient({
+    chain,
+    transport: http(settings.rpcUrl),
+    pollingInterval: 300,
+  }).waitForTransactionReceipt({
     hash,
   });
 }

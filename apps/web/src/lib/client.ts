@@ -60,14 +60,20 @@ export function makeClient(
 }
 
 /** Local demo only: give an address test ETH for fees (anvil_setBalance). */
-export async function localFundGas(client: FirewallClientConfig, address: Address): Promise<void> {
+export async function localFundGas(
+  client: FirewallClientConfig,
+  address: Address,
+): Promise<void> {
   await client.publicClient.request({
     method: "anvil_setBalance" as never,
     params: [address, "0xDE0B6B3A7640000"] as never, // 1 ETH
   });
 }
 
-export function explorerTx(config: RuntimeConfig, hash: string): string | undefined {
+export function explorerTx(
+  config: RuntimeConfig,
+  hash: string,
+): string | undefined {
   const base = config.network.explorerUrl;
   return base ? `${base.replace(/\/$/, "")}/tx/${hash}` : undefined;
 }

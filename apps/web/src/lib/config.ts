@@ -1,4 +1,8 @@
-import type { FirewallAddresses, ReferenceOrder, SignedOrder } from "@session-firewall/sdk";
+import type {
+  FirewallAddresses,
+  ReferenceOrder,
+  SignedOrder,
+} from "@session-firewall/sdk";
 import { type Address, type Hex, getAddress, isAddress, isHex } from "viem";
 
 /**
@@ -75,7 +79,8 @@ function url(v: unknown, field: string, optional = false): string | undefined {
     if (optional) return undefined;
     fail(`${field} is required`);
   }
-  if (typeof v !== "string" || !isHttpUrl(v)) fail(`${field} must be an http(s) URL`);
+  if (typeof v !== "string" || !isHttpUrl(v))
+    fail(`${field} must be an http(s) URL`);
   return v;
 }
 
@@ -121,7 +126,8 @@ export function parseRuntimeConfig(json: unknown): RuntimeConfig {
   const n = j.network as Record<string, unknown> | undefined;
   if (!n) fail("network missing");
   const chainId = Number(n.chainId);
-  if (!Number.isSafeInteger(chainId) || chainId <= 0) fail("network.chainId invalid");
+  if (!Number.isSafeInteger(chainId) || chainId <= 0)
+    fail("network.chainId invalid");
   const network: RuntimeConfig["network"] = {
     chainId,
     name: typeof n.name === "string" ? n.name : `Chain ${chainId}`,
@@ -139,7 +145,8 @@ export function parseRuntimeConfig(json: unknown): RuntimeConfig {
     const addresses = Object.fromEntries(
       ADDRESS_KEYS.map((k) => [k, addr(a[k], `deployment.addresses.${k}`)]),
     ) as unknown as FirewallAddresses;
-    if (a.attester) addresses.attester = addr(a.attester, "deployment.addresses.attester");
+    if (a.attester)
+      addresses.attester = addr(a.attester, "deployment.addresses.attester");
     const m = d.market as Record<string, unknown> | undefined;
     if (!m) fail("deployment.market missing");
     deployment = {
@@ -163,7 +170,10 @@ export function parseRuntimeConfig(json: unknown): RuntimeConfig {
   if (l) {
     if (typeof l.bundlerPrivateKey !== "string" || !isHex(l.bundlerPrivateKey))
       fail("local.bundlerPrivateKey must be hex");
-    local = { bundlerPrivateKey: l.bundlerPrivateKey, faucet: l.faucet === true };
+    local = {
+      bundlerPrivateKey: l.bundlerPrivateKey,
+      faucet: l.faucet === true,
+    };
   }
   return { network, deployment, local };
 }
@@ -180,6 +190,9 @@ export function serializeRuntimeConfig(c: RuntimeConfig): string {
 export async function loadRuntimeConfig(): Promise<RuntimeConfig> {
   // Relative URL: works at the domain root and under an IPFS gateway path.
   const res = await fetch("./runtime-config.json", { cache: "no-store" });
-  if (!res.ok) throw new ConfigError(`Could not load runtime-config.json (${res.status}).`);
+  if (!res.ok)
+    throw new ConfigError(
+      `Could not load runtime-config.json (${res.status}).`,
+    );
   return parseRuntimeConfig(await res.json());
 }

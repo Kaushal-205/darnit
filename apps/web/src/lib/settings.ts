@@ -28,7 +28,10 @@ export function defaultSettings(config: RuntimeConfig): NetworkSettings {
   };
 }
 
-export function loadSettings(config: RuntimeConfig, kv: KV | undefined = storage()): NetworkSettings {
+export function loadSettings(
+  config: RuntimeConfig,
+  kv: KV | undefined = storage(),
+): NetworkSettings {
   const defaults = defaultSettings(config);
   const raw = kv?.getItem(KEY(config.network.chainId));
   if (!raw) return defaults;
@@ -51,14 +54,18 @@ export function saveSettings(
   kv?.setItem(KEY(config.network.chainId), JSON.stringify(s));
 }
 
-export function resetSettings(config: RuntimeConfig, kv: KV | undefined = storage()): void {
+export function resetSettings(
+  config: RuntimeConfig,
+  kv: KV | undefined = storage(),
+): void {
   kv?.removeItem(KEY(config.network.chainId));
 }
 
 /** Plain-language problems with the settings, empty when they are fine. */
 export function validateSettings(s: NetworkSettings): string[] {
   const errors: string[] = [];
-  if (!isHttpUrl(s.rpcUrl)) errors.push("The RPC address must start with https:// or http://.");
+  if (!isHttpUrl(s.rpcUrl))
+    errors.push("The RPC address must start with https:// or http://.");
   if (s.bundlerUrl && !isHttpUrl(s.bundlerUrl))
     errors.push("The bundler address must start with https:// or http://.");
   if (s.paymasterUrl && !isHttpUrl(s.paymasterUrl))

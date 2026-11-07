@@ -25,10 +25,16 @@ if (!files.some((f) => f.endsWith("index.html"))) {
   process.exit(2);
 }
 
-const problems = files.flatMap((f) => scanText(relative(out, f), readFileSync(f, "utf8")));
+const problems = files.flatMap((f) =>
+  scanText(relative(out, f), readFileSync(f, "utf8")),
+);
 if (problems.length) {
   for (const p of problems) console.error(`${p.file}: ${p.url} (${p.reason})`);
-  console.error(`check:origins FAILED: ${problems.length} problem(s) in ${files.length} files.`);
+  console.error(
+    `check:origins FAILED: ${problems.length} problem(s) in ${files.length} files.`,
+  );
   process.exit(1);
 }
-console.log(`check:origins OK: ${files.length} files scanned, no third-party origins loaded or unreviewed.`);
+console.log(
+  `check:origins OK: ${files.length} files scanned, no third-party origins loaded or unreviewed.`,
+);

@@ -1,7 +1,14 @@
-import { type FirewallAccount, getFirewallAccount } from "@session-firewall/sdk";
+import {
+  type FirewallAccount,
+  getFirewallAccount,
+} from "@session-firewall/sdk";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { explorerTx, makeClient } from "../lib/client";
-import { type Deployment, type RuntimeConfig, loadRuntimeConfig } from "../lib/config";
+import {
+  type Deployment,
+  type RuntimeConfig,
+  loadRuntimeConfig,
+} from "../lib/config";
 import { explainError } from "../lib/errors";
 import { formatUsd } from "../lib/format";
 import { localMintUsdc } from "../lib/onboard";
@@ -32,7 +39,13 @@ function tabFromHash(): Tab {
   return TABS.includes(h) ? h : "trade";
 }
 
-type Outcome = { ok: boolean; label: string; message: string; userOpHash?: string; transactionHash?: string };
+type Outcome = {
+  ok: boolean;
+  label: string;
+  message: string;
+  userOpHash?: string;
+  transactionHash?: string;
+};
 
 function Header(p: {
   network?: string;
@@ -122,7 +135,11 @@ function Account(p: {
   const run = useCallback<AppCtx["run"]>(
     async (label, fn) => {
       setBusy(true);
-      setOutcome({ ok: true, label, message: "Working… confirm with your passkey if asked." });
+      setOutcome({
+        ok: true,
+        label,
+        message: "Working… confirm with your passkey if asked.",
+      });
       try {
         const r = await fn();
         setOutcome({
@@ -158,7 +175,11 @@ function Account(p: {
   );
 
   const network = (
-    <NetworkScreen config={config} settings={settings} onChange={p.onSettings} />
+    <NetworkScreen
+      config={config}
+      settings={settings}
+      onChange={p.onSettings}
+    />
   );
   if (!client || !account) {
     return (
@@ -169,23 +190,48 @@ function Account(p: {
     );
   }
 
-  const ctx: AppCtx = { config, deployment, settings, client, account, snap, refresh, busy, run };
+  const ctx: AppCtx = {
+    config,
+    deployment,
+    settings,
+    client,
+    account,
+    snap,
+    refresh,
+    busy,
+    run,
+  };
   return (
     <Ctx.Provider value={ctx}>
       <div className="space-y-4">
         <Card testId="summary">
-          <div className="mb-3 font-mono text-xs break-all" data-testid="account-address">
+          <div
+            className="mb-3 font-mono text-xs break-all"
+            data-testid="account-address"
+          >
             {record.address}
           </div>
           <div className="grid gap-4 sm:grid-cols-4">
-            <Stat label="USDC" value={snap ? formatUsd(snap.usdc) : "…"} testId="balance-usdc" />
-            <Stat label="Left this hour" value={snap ? formatUsd(snap.budgetLeft) : "…"} testId="summary-budget" />
+            <Stat
+              label="USDC"
+              value={snap ? formatUsd(snap.usdc) : "…"}
+              testId="balance-usdc"
+            />
+            <Stat
+              label="Left this hour"
+              value={snap ? formatUsd(snap.budgetLeft) : "…"}
+              testId="summary-budget"
+            />
             <Stat
               label="Hourly limit"
               value={snap ? formatUsd(snap.hourlyCap) : "…"}
               testId="summary-cap"
             />
-            <Stat label="Trading" value={snap ? (snap.frozen ? "Paused" : "On") : "…"} testId="summary-trading" />
+            <Stat
+              label="Trading"
+              value={snap ? (snap.frozen ? "Paused" : "On") : "…"}
+              testId="summary-trading"
+            />
           </div>
           {config.local?.faucet && (
             <div className="mt-3">
@@ -195,7 +241,12 @@ function Account(p: {
                 testId="faucet"
                 onClick={() =>
                   void run("Add test USDC", () =>
-                    localMintUsdc(config, settings, deployment, record.address).then(() => undefined),
+                    localMintUsdc(
+                      config,
+                      settings,
+                      deployment,
+                      record.address,
+                    ).then(() => undefined),
                   )
                 }
               >
@@ -206,7 +257,10 @@ function Account(p: {
         </Card>
 
         {readError && (
-          <p className="rounded bg-amber-100 p-3 text-sm" data-testid="read-error">
+          <p
+            className="rounded bg-amber-100 p-3 text-sm"
+            data-testid="read-error"
+          >
             {readError}
           </p>
         )}
@@ -216,26 +270,36 @@ function Account(p: {
             className={`rounded-lg p-3 text-sm ${outcome.ok ? "bg-indigo-50 text-indigo-950" : "bg-red-50 text-red-900"}`}
             data-testid={outcome.ok ? "outcome-ok" : "outcome-error"}
           >
-            <span className="font-semibold">{outcome.label}:</span> {outcome.message}
+            <span className="font-semibold">{outcome.label}:</span>{" "}
+            {outcome.message}
             <Hash label="User operation" value={outcome.userOpHash} />
             <Hash
               label="Transaction"
               value={outcome.transactionHash}
-              href={outcome.transactionHash ? explorerTx(config, outcome.transactionHash) : undefined}
+              href={
+                outcome.transactionHash
+                  ? explorerTx(config, outcome.transactionHash)
+                  : undefined
+              }
             />
           </div>
         )}
 
         {p.attack && <AttackPanel />}
 
-        <nav className="flex gap-1 border-b border-slate-200" aria-label="Screens">
+        <nav
+          className="flex gap-1 border-b border-slate-200"
+          aria-label="Screens"
+        >
           {TABS.map((t) => (
             <a
               key={t}
               href={`#/${t}`}
               data-testid={`tab-${t}`}
               className={`rounded-t-lg px-4 py-2 text-sm font-medium ${
-                p.tab === t ? "border-b-2 border-indigo-700 text-indigo-800" : "text-slate-600"
+                p.tab === t
+                  ? "border-b-2 border-indigo-700 text-indigo-800"
+                  : "text-slate-600"
               }`}
             >
               {TAB_LABEL[t]}
@@ -265,7 +329,9 @@ export function App() {
         setConfig(c);
         setSettings(loadSettings(c));
         if (c.deployment)
-          setRecord(loadAccount(c.network.chainId, c.deployment.addresses.module));
+          setRecord(
+            loadAccount(c.network.chainId, c.deployment.addresses.module),
+          );
       })
       .catch((e) => setError((e as Error).message));
     const onHash = () => setTab(tabFromHash());
@@ -284,15 +350,26 @@ export function App() {
         canAttack={!!record}
       />
       <main className="mx-auto max-w-5xl space-y-4 px-4 py-6">
-        {error && <p className="rounded bg-red-50 p-3 text-sm text-red-800">{error}</p>}
-        {!config && !error && <p className="text-sm text-slate-600">Loading…</p>}
+        {error && (
+          <p className="rounded bg-red-50 p-3 text-sm text-red-800">{error}</p>
+        )}
+        {!config && !error && (
+          <p className="text-sm text-slate-600">Loading…</p>
+        )}
         {config && settings && !deployment && (
           <>
-            <p className="rounded bg-amber-100 p-3 text-sm" data-testid="no-deployment">
-              The firewall contracts are not deployed on {config.network.name} yet. Run the local demo
-              (pnpm demo:web) to try the full app.
+            <p
+              className="rounded bg-amber-100 p-3 text-sm"
+              data-testid="no-deployment"
+            >
+              The firewall contracts are not deployed on {config.network.name}{" "}
+              yet. Run the local demo (pnpm demo:web) to try the full app.
             </p>
-            <NetworkScreen config={config} settings={settings} onChange={setSettings} />
+            <NetworkScreen
+              config={config}
+              settings={settings}
+              onChange={setSettings}
+            />
           </>
         )}
         {config && settings && deployment && !record && (

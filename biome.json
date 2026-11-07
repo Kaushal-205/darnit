@@ -1,6 +1,15 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "files": { "ignore": ["contracts/**", "**/dist/**", "**/.next/**"] },
+  "files": {
+    "ignore": [
+      "contracts/**",
+      "**/dist/**",
+      "**/.next/**",
+      "apps/web/out/**",
+      "apps/web/next-env.d.ts",
+      "apps/web/test-results/**"
+    ]
+  },
   "formatter": { "indentStyle": "space", "indentWidth": 2 },
   "linter": { "enabled": true, "rules": { "recommended": true } }
 }

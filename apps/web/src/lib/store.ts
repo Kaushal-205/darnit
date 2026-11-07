@@ -23,7 +23,10 @@ export type AccountRecord = {
 const accountKey = (chainId: number, module: Address) =>
   `session-firewall:account:${chainId}:${module.toLowerCase()}`;
 
-export function loadAccount(chainId: number, module: Address): AccountRecord | undefined {
+export function loadAccount(
+  chainId: number,
+  module: Address,
+): AccountRecord | undefined {
   try {
     const raw = localStorage.getItem(accountKey(chainId, module));
     return raw ? (JSON.parse(raw) as AccountRecord) : undefined;
@@ -101,19 +104,29 @@ function tx<T>(
   );
 }
 
-export function putSession(s: StoredSession, idb?: IDBFactory): Promise<IDBValidKey> {
+export function putSession(
+  s: StoredSession,
+  idb?: IDBFactory,
+): Promise<IDBValidKey> {
   return tx("readwrite", (store) => store.put(s), idb);
 }
 
-export async function listSessions(account: Address, idb?: IDBFactory): Promise<StoredSession[]> {
+export async function listSessions(
+  account: Address,
+  idb?: IDBFactory,
+): Promise<StoredSession[]> {
   const all = await tx<StoredSession[]>(
     "readonly",
-    (store) => store.index("account").getAll(account) as IDBRequest<StoredSession[]>,
+    (store) =>
+      store.index("account").getAll(account) as IDBRequest<StoredSession[]>,
     idb,
   );
   return all.sort((a, b) => b.createdAt - a.createdAt);
 }
 
-export function deleteSession(permissionId: Hex, idb?: IDBFactory): Promise<undefined> {
+export function deleteSession(
+  permissionId: Hex,
+  idb?: IDBFactory,
+): Promise<undefined> {
   return tx("readwrite", (store) => store.delete(permissionId), idb);
 }

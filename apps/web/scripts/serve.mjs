@@ -18,15 +18,20 @@ const TYPES = {
 
 export function serve({ dir = join(here, "..", "out"), port = 4173 } = {}) {
   const root = resolve(dir);
-  const headers = JSON.parse(readFileSync(join(here, "..", "security-headers.json"), "utf8"));
+  const headers = JSON.parse(
+    readFileSync(join(here, "..", "security-headers.json"), "utf8"),
+  );
   const server = createServer((req, res) => {
-    const path = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
+    const path = decodeURIComponent(
+      new URL(req.url, "http://localhost").pathname,
+    );
     let file = normalize(join(root, path));
     if (file !== root && !file.startsWith(root + sep)) {
       res.writeHead(403).end();
       return;
     }
-    if (existsSync(file) && statSync(file).isDirectory()) file = join(file, "index.html");
+    if (existsSync(file) && statSync(file).isDirectory())
+      file = join(file, "index.html");
     if (!existsSync(file)) {
       res.writeHead(404, headers).end("Not found");
       return;

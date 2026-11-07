@@ -1,9 +1,16 @@
 import type { ReactNode } from "react";
 import { shortHex } from "../lib/format";
 
-export function Card(p: { title?: string; children: ReactNode; testId?: string }) {
+export function Card(p: {
+  title?: string;
+  children: ReactNode;
+  testId?: string;
+}) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm" data-testid={p.testId}>
+    <section
+      className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      data-testid={p.testId}
+    >
       {p.title && <h2 className="mb-3 text-lg font-semibold">{p.title}</h2>}
       {p.children}
     </section>
@@ -19,7 +26,8 @@ export function Button(p: {
 }) {
   const color = {
     primary: "bg-indigo-700 text-white hover:bg-indigo-800",
-    secondary: "border border-slate-300 bg-white text-slate-800 hover:bg-slate-100",
+    secondary:
+      "border border-slate-300 bg-white text-slate-800 hover:bg-slate-100",
     danger: "bg-red-700 text-white hover:bg-red-800",
   }[p.variant ?? "primary"];
   return (
@@ -63,7 +71,9 @@ export function Field(p: {
 export function Stat(p: { label: string; value: string; testId?: string }) {
   return (
     <div>
-      <div className="text-xs uppercase tracking-wide text-slate-500">{p.label}</div>
+      <div className="text-xs uppercase tracking-wide text-slate-500">
+        {p.label}
+      </div>
       <div className="text-lg font-semibold" data-testid={p.testId}>
         {p.value}
       </div>
@@ -77,7 +87,12 @@ export function Hash(p: { label: string; value?: string; href?: string }) {
     <div className="font-mono text-xs break-all text-slate-600">
       {p.label}:{" "}
       {p.href ? (
-        <a className="underline" href={p.href} target="_blank" rel="noreferrer noopener">
+        <a
+          className="underline"
+          href={p.href}
+          target="_blank"
+          rel="noreferrer noopener"
+        >
           {shortHex(p.value, 10)}
         </a>
       ) : (

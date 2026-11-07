@@ -1,4 +1,8 @@
-import type { FirewallAccount, FirewallClientConfig, UserOpResult } from "@session-firewall/sdk";
+import type {
+  FirewallAccount,
+  FirewallClientConfig,
+  UserOpResult,
+} from "@session-firewall/sdk";
 import { createContext, useContext } from "react";
 import type { Deployment, RuntimeConfig } from "../lib/config";
 import type { NetworkSettings } from "../lib/settings";
@@ -14,7 +18,10 @@ export type AppCtx = {
   refresh: () => Promise<void>;
   busy: boolean;
   /** Run an action; show its outcome (hash or plain-sentence error) and refresh. */
-  run: (label: string, fn: () => Promise<UserOpResult | undefined | void>) => Promise<boolean>;
+  run: (
+    label: string,
+    fn: () => Promise<UserOpResult | undefined>,
+  ) => Promise<boolean>;
 };
 
 export const Ctx = createContext<AppCtx | null>(null);

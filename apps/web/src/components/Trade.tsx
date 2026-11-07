@@ -1,15 +1,34 @@
 import { fill } from "@session-firewall/sdk";
 import { useState } from "react";
-import { formatPrice, formatShares, formatUsd, parseAmount } from "../lib/format";
+import {
+  formatPrice,
+  formatShares,
+  formatUsd,
+  parseAmount,
+} from "../lib/format";
 import { allowMarket } from "../lib/onboard";
-import { type Book, fillCost, pickLevel, worstCaseLoss } from "../lib/orderbook";
+import {
+  type Book,
+  fillCost,
+  pickLevel,
+  worstCaseLoss,
+} from "../lib/orderbook";
 import { useApp } from "./context";
 import { Button, Card, Field } from "./ui";
 
 function BookTable(p: { book: Book; testId: string }) {
-  const row = (kind: "Sell" | "Buy", price: bigint, remaining: bigint, key: string) => (
+  const row = (
+    kind: "Sell" | "Buy",
+    price: bigint,
+    remaining: bigint,
+    key: string,
+  ) => (
     <tr key={key} className="border-t border-slate-100">
-      <td className={kind === "Sell" ? "py-1 text-red-700" : "py-1 text-green-700"}>
+      <td
+        className={
+          kind === "Sell" ? "py-1 text-red-700" : "py-1 text-green-700"
+        }
+      >
         {kind === "Sell" ? "Offered at" : "Wanted at"}
       </td>
       <td className="py-1 text-right font-mono">{formatPrice(price)}</td>
@@ -26,7 +45,9 @@ function BookTable(p: { book: Book; testId: string }) {
         </tr>
       </thead>
       <tbody>
-        {[...p.book.asks].reverse().map((l) => row("Sell", l.price, l.remaining, l.hash))}
+        {[...p.book.asks]
+          .reverse()
+          .map((l) => row("Sell", l.price, l.remaining, l.hash))}
         {p.book.bids.map((l) => row("Buy", l.price, l.remaining, l.hash))}
       </tbody>
     </table>
@@ -46,36 +67,56 @@ function Outcome(p: { name: "YES" | "NO"; book: Book; held: bigint }) {
   function trade(action: "buy" | "sell") {
     const level = action === "buy" ? buy : sell;
     if (!session || !level || !shares) return;
-    void run(`${action === "buy" ? "Buy" : "Sell"} ${formatShares(shares)} ${p.name}`, () =>
-      fill(account, session, { market: deployment.market.address, order: level.signed, amount: shares }),
+    void run(
+      `${action === "buy" ? "Buy" : "Sell"} ${formatShares(shares)} ${p.name}`,
+      () =>
+        fill(account, session, {
+          market: deployment.market.address,
+          order: level.signed,
+          amount: shares,
+        }),
     );
   }
 
   return (
     <Card title={`${p.name} shares`} testId={`outcome-${lower}`}>
       <p className="mb-2 text-sm">
-        You hold <span className="font-semibold" data-testid={`held-${lower}`}>{formatShares(p.held)}</span>{" "}
+        You hold{" "}
+        <span className="font-semibold" data-testid={`held-${lower}`}>
+          {formatShares(p.held)}
+        </span>{" "}
         {p.name}. Each pays $1 if {p.name} wins.
       </p>
       <BookTable book={p.book} testId={`book-${lower}`} />
       <div className="mt-3 space-y-2">
-        <Field label="Shares" value={amount} onChange={setAmount} testId={`amount-${lower}`} />
+        <Field
+          label="Shares"
+          value={amount}
+          onChange={setAmount}
+          testId={`amount-${lower}`}
+        />
         <div className="text-xs text-slate-600">
           {buy && shares && (
             <div>
               Buying costs {formatUsd(fillCost(buy, shares, "buy"))}, uses{" "}
-              {formatUsd(worstCaseLoss(buy, shares, "buy"))} of your hourly limit.
+              {formatUsd(worstCaseLoss(buy, shares, "buy"))} of your hourly
+              limit.
             </div>
           )}
           {sell && shares && (
             <div>
               Selling pays {formatUsd(fillCost(sell, shares, "sell"))}, uses{" "}
-              {formatUsd(worstCaseLoss(sell, shares, "sell"))} of your hourly limit.
+              {formatUsd(worstCaseLoss(sell, shares, "sell"))} of your hourly
+              limit.
             </div>
           )}
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => trade("buy")} disabled={busy || !session || !buy} testId={`buy-${lower}`}>
+          <Button
+            onClick={() => trade("buy")}
+            disabled={busy || !session || !buy}
+            testId={`buy-${lower}`}
+          >
             Buy
           </Button>
           <Button
@@ -100,10 +141,14 @@ export function Trade() {
     <div className="space-y-4">
       <Card title={deployment.market.question}>
         <p className="text-sm text-slate-600">
-          Trades are signed by this device's session key with no prompts. The firewall checks every one.
+          Trades are signed by this device's session key with no prompts. The
+          firewall checks every one.
         </p>
         {!session && (
-          <p className="mt-2 rounded bg-amber-100 p-3 text-sm" data-testid="no-session">
+          <p
+            className="mt-2 rounded bg-amber-100 p-3 text-sm"
+            data-testid="no-session"
+          >
             {snap.frozen
               ? "Trading is paused."
               : "No active trading session. Start one on the Sessions screen to trade."}
@@ -114,7 +159,11 @@ export function Trade() {
             <span>The market is not yet allowed to use your funds.</span>
             <Button
               disabled={busy}
-              onClick={() => void run("Allow the market", () => allowMarket(account, deployment))}
+              onClick={() =>
+                void run("Allow the market", () =>
+                  allowMarket(account, deployment),
+                )
+              }
             >
               Allow market
             </Button>

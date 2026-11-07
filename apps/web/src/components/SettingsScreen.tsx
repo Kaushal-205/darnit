@@ -1,4 +1,11 @@
-import { cancelChange, executeChange, exit, freeze, lowerCap, queueChange } from "@session-firewall/sdk";
+import {
+  cancelChange,
+  executeChange,
+  exit,
+  freeze,
+  lowerCap,
+  queueChange,
+} from "@session-firewall/sdk";
 import { useState } from "react";
 import { type Address, getAddress, isAddress } from "viem";
 import { formatDate, formatEta, formatUsd, parseAmount } from "../lib/format";
@@ -22,9 +29,21 @@ export function SettingsScreen() {
     <div className="space-y-4">
       <Card title="Your limits" testId="config">
         <div className="grid gap-4 sm:grid-cols-3">
-          <Stat label="Hourly limit" value={formatUsd(snap.hourlyCap)} testId="config-cap" />
-          <Stat label="Left this hour" value={formatUsd(snap.budgetLeft)} testId="budget-left" />
-          <Stat label="Trading" value={snap.frozen ? "Paused" : "On"} testId="trading-state" />
+          <Stat
+            label="Hourly limit"
+            value={formatUsd(snap.hourlyCap)}
+            testId="config-cap"
+          />
+          <Stat
+            label="Left this hour"
+            value={formatUsd(snap.budgetLeft)}
+            testId="budget-left"
+          />
+          <Stat
+            label="Trading"
+            value={snap.frozen ? "Paused" : "On"}
+            testId="trading-state"
+          />
         </div>
         <h3 className="mt-4 text-sm font-medium">Withdrawal addresses</h3>
         <ul className="font-mono text-xs break-all" data-testid="destinations">
@@ -42,7 +61,8 @@ export function SettingsScreen() {
 
       <Card title="Move funds out" testId="exit">
         <p className="mb-3 text-sm text-slate-700">
-          Sends USDC to a withdrawal address. This always works, even when paused or past your hourly limit.
+          Sends USDC to a withdrawal address. This always works, even when
+          paused or past your hourly limit.
         </p>
         <div className="space-y-3">
           <label className="block text-sm">
@@ -72,7 +92,11 @@ export function SettingsScreen() {
             onClick={() => {
               if (!exitValue || !to) return;
               void run("Move funds out", () =>
-                exit(account, { token: deployment.market.usdc, amount: exitValue, destination: to }),
+                exit(account, {
+                  token: deployment.market.usdc,
+                  amount: exitValue,
+                  destination: to,
+                }),
               );
             }}
           >
@@ -85,8 +109,8 @@ export function SettingsScreen() {
         <div className="space-y-3">
           <div>
             <p className="mb-2 text-sm text-slate-700">
-              Pausing ends every session and stops trading right away. Withdrawals still work. Resuming takes 24
-              hours.
+              Pausing ends every session and stops trading right away.
+              Withdrawals still work. Resuming takes 24 hours.
             </p>
             <Button
               variant="danger"
@@ -108,7 +132,10 @@ export function SettingsScreen() {
             disabled={busy || !lowered}
             testId="lower-cap"
             onClick={() => {
-              if (lowered) void run("Lower the hourly limit", () => lowerCap(account, lowered));
+              if (lowered)
+                void run("Lower the hourly limit", () =>
+                  lowerCap(account, lowered),
+                );
             }}
           >
             Lower limit
@@ -118,7 +145,8 @@ export function SettingsScreen() {
 
       <Card title="Loosen after 24 hours" testId="loosen">
         <p className="mb-3 text-sm text-slate-700">
-          Anything that gives more power waits 24 hours, so you can cancel it if it was not you.
+          Anything that gives more power waits 24 hours, so you can cancel it if
+          it was not you.
         </p>
         <div className="space-y-3">
           <Field
@@ -144,14 +172,22 @@ export function SettingsScreen() {
           >
             Queue address
           </Button>
-          <Field label="Raise the hourly limit to (USD)" value={raiseCap} onChange={setRaiseCap} testId="queue-cap" />
+          <Field
+            label="Raise the hourly limit to (USD)"
+            value={raiseCap}
+            onChange={setRaiseCap}
+            testId="queue-cap"
+          />
           <Button
             variant="secondary"
             disabled={busy || !raised}
             onClick={() => {
               if (raised)
                 void run("Queue higher limit", async () => {
-                  const q = await queueChange(account, { kind: "raiseCap", hourlyCap: raised });
+                  const q = await queueChange(account, {
+                    kind: "raiseCap",
+                    hourlyCap: raised,
+                  });
                   return q.result;
                 });
             }}
@@ -178,20 +214,32 @@ export function SettingsScreen() {
       </Card>
 
       <Card title="Waiting changes" testId="pending">
-        {!snap.pending.length && <p className="text-sm text-slate-600">Nothing is waiting.</p>}
+        {!snap.pending.length && (
+          <p className="text-sm text-slate-600">Nothing is waiting.</p>
+        )}
         <ul className="divide-y divide-slate-100">
           {snap.pending.map((c) => (
-            <li key={c.id} className="py-2 text-sm" data-testid="pending-change">
+            <li
+              key={c.id}
+              className="py-2 text-sm"
+              data-testid="pending-change"
+            >
               <div className="break-all">{c.description}</div>
-              <div className="mb-2 text-xs text-slate-600" data-testid="pending-eta">
-                Can take effect {formatEta(c.eta, snap.now)} ({formatDate(c.eta)})
+              <div
+                className="mb-2 text-xs text-slate-600"
+                data-testid="pending-eta"
+              >
+                Can take effect {formatEta(c.eta, snap.now)} (
+                {formatDate(c.eta)})
               </div>
               <div className="flex gap-2">
                 <Button
                   variant="danger"
                   disabled={busy}
                   testId="cancel-change"
-                  onClick={() => void run("Cancel change", () => cancelChange(account, c.id))}
+                  onClick={() =>
+                    void run("Cancel change", () => cancelChange(account, c.id))
+                  }
                 >
                   Cancel
                 </Button>
@@ -199,7 +247,11 @@ export function SettingsScreen() {
                   <Button
                     variant="secondary"
                     disabled={busy}
-                    onClick={() => void run("Apply change", () => executeChange(account, c.id))}
+                    onClick={() =>
+                      void run("Apply change", () =>
+                        executeChange(account, c.id),
+                      )
+                    }
                   >
                     Apply
                   </Button>

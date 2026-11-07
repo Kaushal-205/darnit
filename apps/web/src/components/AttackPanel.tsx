@@ -19,7 +19,10 @@ const BADGE: Record<Attempt["status"], { text: string; cls: string }> = {
   running: { text: "Trying…", cls: "bg-amber-100 text-amber-900" },
   blocked: { text: "Blocked", cls: "bg-green-100 text-green-900" },
   "not-blocked": { text: "NOT BLOCKED", cls: "bg-red-700 text-white" },
-  "not-signed": { text: "You refused to sign", cls: "bg-green-100 text-green-900" },
+  "not-signed": {
+    text: "You refused to sign",
+    cls: "bg-green-100 text-green-900",
+  },
   error: { text: "Could not run", cls: "bg-amber-100 text-amber-900" },
 };
 
@@ -27,11 +30,11 @@ function Funds(p: { label: string; s: FundsSnapshot; testId: string }) {
   return (
     <div className="text-sm" data-testid={p.testId}>
       <div className="font-medium">{p.label}</div>
-      Your account: {formatUsd(p.s.accountUsdc)} USDC, {formatShares(p.s.accountYes)} YES,{" "}
-      {formatShares(p.s.accountNo)} NO
+      Your account: {formatUsd(p.s.accountUsdc)} USDC,{" "}
+      {formatShares(p.s.accountYes)} YES, {formatShares(p.s.accountNo)} NO
       <br />
-      Attacker: {formatUsd(p.s.attackerUsdc)} USDC, {formatShares(p.s.attackerYes)} YES,{" "}
-      {formatShares(p.s.attackerNo)} NO
+      Attacker: {formatUsd(p.s.attackerUsdc)} USDC,{" "}
+      {formatShares(p.s.attackerYes)} YES, {formatShares(p.s.attackerNo)} NO
     </div>
   );
 }
@@ -67,28 +70,48 @@ export function AttackPanel() {
   const finished = !!after && !running;
   const safe = finished && before && after && fundsUnchanged(before, after);
   return (
-    <div className="rounded-xl border-2 border-red-600 bg-red-50 p-1" data-testid="attack-panel">
+    <div
+      className="rounded-xl border-2 border-red-600 bg-red-50 p-1"
+      data-testid="attack-panel"
+    >
       <Card title="Simulated attack: this website has been compromised">
         <p className="mb-3 text-sm text-slate-700">
-          This runs a script playing an attacker who has taken over this website. It reads your session key from
-          this browser, signs real transactions and even asks your passkey to sign one. Your account's rules on
-          the blockchain are the only thing in its way. Attacker's address:{" "}
+          This runs a script playing an attacker who has taken over this
+          website. It reads your session key from this browser, signs real
+          transactions and even asks your passkey to sign one. Your account's
+          rules on the blockchain are the only thing in its way. Attacker's
+          address:{" "}
           <span className="font-mono text-xs break-all">{ATTACKER}</span>
         </p>
-        <Button variant="danger" onClick={start} disabled={running} testId="run-attack">
+        <Button
+          variant="danger"
+          onClick={start}
+          disabled={running}
+          testId="run-attack"
+        >
           {running ? "Attack running…" : "Run the malicious script"}
         </Button>
         {error && (
-          <p className="mt-3 rounded bg-amber-100 p-3 text-sm" data-testid="attack-error">
+          <p
+            className="mt-3 rounded bg-amber-100 p-3 text-sm"
+            data-testid="attack-error"
+          >
             {error}
           </p>
         )}
         <ul className="mt-4 space-y-3">
           {attempts.map((a) => (
-            <li key={a.id} className="rounded-lg border border-slate-200 p-3" data-testid={`attempt-${a.id}`}>
+            <li
+              key={a.id}
+              className="rounded-lg border border-slate-200 p-3"
+              data-testid={`attempt-${a.id}`}
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="text-sm font-medium">
-                  {a.title} <span className="font-normal text-slate-500">(signed with {a.signer})</span>
+                  {a.title}{" "}
+                  <span className="font-normal text-slate-500">
+                    (signed with {a.signer})
+                  </span>
                 </div>
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-semibold ${BADGE[a.status].cls}`}
@@ -99,19 +122,32 @@ export function AttackPanel() {
                 </span>
               </div>
               {a.message && (
-                <p className="mt-1 text-sm" data-testid={`attempt-${a.id}-message`}>
+                <p
+                  className="mt-1 text-sm"
+                  data-testid={`attempt-${a.id}-message`}
+                >
                   {a.message}
                 </p>
               )}
-              {a.code && <div className="mt-1 text-xs text-slate-500">Rule: {a.rule} ({a.code})</div>}
+              {a.code && (
+                <div className="mt-1 text-xs text-slate-500">
+                  Rule: {a.rule} ({a.code})
+                </div>
+              )}
               {a.status === "blocked" && !a.mined && (
-                <div className="text-xs text-slate-500">Refused at the signature check, so no transaction exists.</div>
+                <div className="text-xs text-slate-500">
+                  Refused at the signature check, so no transaction exists.
+                </div>
               )}
               <Hash label="User operation" value={a.userOpHash} />
               <Hash
                 label="Reverted transaction"
                 value={a.transactionHash}
-                href={a.transactionHash ? explorerTx(config, a.transactionHash) : undefined}
+                href={
+                  a.transactionHash
+                    ? explorerTx(config, a.transactionHash)
+                    : undefined
+                }
               />
             </li>
           ))}

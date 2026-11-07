@@ -25,14 +25,21 @@ export function NetworkScreen(p: {
   return (
     <Card title="Network" testId="network">
       <p className="mb-3 text-sm text-slate-700">
-        This app talks directly to the blockchain, with no server of ours in between. Choose whose servers carry
-        your requests. These providers can see your address and activity. Saved only in this browser.
+        This app talks directly to the blockchain, with no server of ours in
+        between. Choose whose servers carry your requests. These providers can
+        see your address and activity. Saved only in this browser.
       </p>
       <p className="mb-3 text-sm">
-        Network: <span className="font-medium">{p.config.network.name}</span> (chain {p.config.network.chainId})
+        Network: <span className="font-medium">{p.config.network.name}</span>{" "}
+        (chain {p.config.network.chainId})
       </p>
       <div className="space-y-3">
-        <Field label="RPC address" value={draft.rpcUrl} onChange={set("rpcUrl")} testId="rpc-url" />
+        <Field
+          label="RPC address"
+          value={draft.rpcUrl}
+          onChange={set("rpcUrl")}
+          testId="rpc-url"
+        />
         <Field
           label="Bundler address"
           hint={
@@ -83,7 +90,10 @@ export function NetworkScreen(p: {
         </Button>
       </div>
       {message && (
-        <p className="mt-2 text-sm text-green-800" data-testid="network-message">
+        <p
+          className="mt-2 text-sm text-green-800"
+          data-testid="network-message"
+        >
           {message}
         </p>
       )}

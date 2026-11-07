@@ -61,7 +61,9 @@ export function formatRemaining(until: bigint, now: bigint): string {
 }
 
 export function shortHex(v: string, chars = 6): string {
-  return v.length <= 2 + chars * 2 ? v : `${v.slice(0, 2 + chars)}…${v.slice(-chars)}`;
+  return v.length <= 2 + chars * 2
+    ? v
+    : `${v.slice(0, 2 + chars)}…${v.slice(-chars)}`;
 }
 
 export function formatDate(unixSeconds: bigint | number): string {

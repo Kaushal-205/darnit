@@ -1,13 +1,26 @@
-import type { FirewallAccount, FirewallClientConfig } from "@session-firewall/sdk";
+import type {
+  FirewallAccount,
+  FirewallClientConfig,
+} from "@session-firewall/sdk";
 import { useState } from "react";
 import { type Address, getAddress } from "viem";
 import type { Deployment, RuntimeConfig } from "../lib/config";
 import { explainError } from "../lib/errors";
 import { formatUsd, parseAmount, shortHex } from "../lib/format";
-import { allowMarket, deployAccount, localMintUsdc, validateOnboarding } from "../lib/onboard";
+import {
+  allowMarket,
+  deployAccount,
+  localMintUsdc,
+  validateOnboarding,
+} from "../lib/onboard";
 import { createPasskey, webAuthnSupported } from "../lib/passkey";
 import type { NetworkSettings } from "../lib/settings";
-import { type AccountRecord, loadPendingPasskey, saveAccount, savePendingPasskey } from "../lib/store";
+import {
+  type AccountRecord,
+  loadPendingPasskey,
+  saveAccount,
+  savePendingPasskey,
+} from "../lib/store";
 import { Button, Card, Field } from "./ui";
 
 export function Onboarding(p: {
@@ -69,11 +82,18 @@ export function Onboarding(p: {
       };
       saveAccount(p.deployment.addresses.module, record);
       savePendingPasskey(undefined);
-      setStep("Confirm with your passkey once more to let the market use your funds…");
+      setStep(
+        "Confirm with your passkey once more to let the market use your funds…",
+      );
       await allowMarket(account, p.deployment);
       if (p.config.local?.faucet) {
         setStep("Adding test USDC (local demo only)…");
-        await localMintUsdc(p.config, p.settings, p.deployment, account.address);
+        await localMintUsdc(
+          p.config,
+          p.settings,
+          p.deployment,
+          account.address,
+        );
       }
       p.onDone(record);
     } catch (e) {
@@ -88,12 +108,14 @@ export function Onboarding(p: {
     <div className="mx-auto max-w-xl space-y-4">
       <Card title="Set up your trading account" testId="onboarding">
         <p className="mb-4 text-sm text-slate-700">
-          Your account has limits written into the blockchain. They hold even if this website is hacked or
-          goes away. You sign with a passkey on this device; we never see it and have no servers involved.
+          Your account has limits written into the blockchain. They hold even if
+          this website is hacked or goes away. You sign with a passkey on this
+          device; we never see it and have no servers involved.
         </p>
         {!webAuthnSupported() && (
           <p className="mb-3 rounded bg-amber-100 p-3 text-sm">
-            This browser cannot use passkeys here. Use a current browser over https or localhost.
+            This browser cannot use passkeys here. Use a current browser over
+            https or localhost.
           </p>
         )}
         <ol className="space-y-5">
@@ -104,7 +126,11 @@ export function Onboarding(p: {
                 Passkey ready ({shortHex(passkey.publicKey)}).
               </p>
             ) : (
-              <Button onClick={makePasskey} disabled={busy} testId="create-passkey">
+              <Button
+                onClick={makePasskey}
+                disabled={busy}
+                testId="create-passkey"
+              >
                 Create passkey
               </Button>
             )}
@@ -121,29 +147,47 @@ export function Onboarding(p: {
             />
             <Field
               label="Most this app can lose per hour (USD)"
-              hint={capValue ? `Trades stop once ${formatUsd(capValue)} is at risk within an hour.` : undefined}
+              hint={
+                capValue
+                  ? `Trades stop once ${formatUsd(capValue)} is at risk within an hour.`
+                  : undefined
+              }
               value={cap}
               onChange={setCap}
               testId="hourly-cap"
             />
             <p className="text-sm text-slate-600">
-              Market: <span className="font-medium">{p.deployment.market.question}</span> (the demo market)
+              Market:{" "}
+              <span className="font-medium">
+                {p.deployment.market.question}
+              </span>{" "}
+              (the demo market)
             </p>
           </li>
           <li>
             <h3 className="mb-1 font-medium">3. Create the account</h3>
-            <Button onClick={create} disabled={busy || !passkey} testId="create-account">
+            <Button
+              onClick={create}
+              disabled={busy || !passkey}
+              testId="create-account"
+            >
               Create my account
             </Button>
           </li>
         </ol>
         {step && (
-          <p className="mt-4 text-sm text-indigo-800" data-testid="onboarding-step">
+          <p
+            className="mt-4 text-sm text-indigo-800"
+            data-testid="onboarding-step"
+          >
             {step}
           </p>
         )}
         {error && (
-          <p className="mt-4 rounded bg-red-50 p-3 text-sm text-red-800" data-testid="onboarding-error">
+          <p
+            className="mt-4 rounded bg-red-50 p-3 text-sm text-red-800"
+            data-testid="onboarding-error"
+          >
             {error}
           </p>
         )}

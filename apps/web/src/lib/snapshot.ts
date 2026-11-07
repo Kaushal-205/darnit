@@ -21,7 +21,8 @@ export function sessionStatus(
   s: Pick<StoredSession, "validUntil" | "epoch">,
   chain: { enabled: boolean; epoch: bigint; frozen: boolean; now: bigint },
 ): SessionStatus {
-  if (!chain.enabled || BigInt(s.epoch) !== chain.epoch) return chain.frozen ? "paused" : "ended";
+  if (!chain.enabled || BigInt(s.epoch) !== chain.epoch)
+    return chain.frozen ? "paused" : "ended";
   if (chain.frozen) return "paused";
   return BigInt(s.validUntil) <= chain.now ? "expired" : "active";
 }
@@ -62,9 +63,22 @@ export async function loadSnapshot(
       args: [me, id],
     });
   const hashes = new Map(
-    market.orders.map((o) => [o, orderHash(o, market.address, config.network.chainId)] as const),
+    market.orders.map(
+      (o) => [o, orderHash(o, market.address, config.network.chainId)] as const,
+    ),
   );
-  const [block, eth, usdc, yes, no, marketAllowance, state, pending, saved, filledList] = await Promise.all([
+  const [
+    block,
+    eth,
+    usdc,
+    yes,
+    no,
+    marketAllowance,
+    state,
+    pending,
+    saved,
+    filledList,
+  ] = await Promise.all([
     publicClient.getBlock(),
     publicClient.getBalance({ address: me }),
     publicClient.readContract({

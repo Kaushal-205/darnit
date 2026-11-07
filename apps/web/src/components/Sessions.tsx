@@ -1,4 +1,8 @@
-import { createSession, removeSession, revokeSessions } from "@session-firewall/sdk";
+import {
+  createSession,
+  removeSession,
+  revokeSessions,
+} from "@session-firewall/sdk";
 import { useState } from "react";
 import { formatDate, formatRemaining, shortHex } from "../lib/format";
 import { deleteSession, putSession } from "../lib/store";
@@ -7,7 +11,12 @@ import { Button, Card, Field } from "./ui";
 
 export const MAX_SESSION_DAYS = 30;
 
-const LABEL = { active: "Active", expired: "Expired", ended: "Ended", paused: "Paused" };
+const LABEL = {
+  active: "Active",
+  expired: "Expired",
+  ended: "Ended",
+  paused: "Paused",
+};
 
 export function Sessions() {
   const { account, config, deployment, snap, run, busy } = useApp();
@@ -36,9 +45,10 @@ export function Sessions() {
     <div className="space-y-4">
       <Card title="Start a trading session" testId="new-session">
         <p className="mb-3 text-sm text-slate-700">
-          A session lets this device trade without a passkey prompt each time. Its key stays in this browser.
-          Even if the key is stolen, it can only trade on your market within your hourly limit. It can never
-          withdraw or change your settings.
+          A session lets this device trade without a passkey prompt each time.
+          Its key stays in this browser. Even if the key is stolen, it can only
+          trade on your market within your hourly limit. It can never withdraw
+          or change your settings.
         </p>
         <Field
           label={`Ends after how many days? (at most ${MAX_SESSION_DAYS})`}
@@ -47,23 +57,33 @@ export function Sessions() {
           testId="session-days"
         />
         <div className="mt-3">
-          <Button onClick={create} disabled={busy || !snap || !validDays || snap.frozen} testId="create-session">
+          <Button
+            onClick={create}
+            disabled={busy || !snap || !validDays || snap.frozen}
+            testId="create-session"
+          >
             Start session
           </Button>
         </div>
       </Card>
       <Card title="Your sessions" testId="session-list">
-        {!snap?.sessions.length && <p className="text-sm text-slate-600">No sessions yet.</p>}
+        {!snap?.sessions.length && (
+          <p className="text-sm text-slate-600">No sessions yet.</p>
+        )}
         <ul className="divide-y divide-slate-100">
           {snap?.sessions.map((s) => (
-            <li key={s.permissionId} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+            <li
+              key={s.permissionId}
+              className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
+            >
               <div>
                 <span className="font-semibold" data-testid="session-status">
                   {LABEL[s.status]}
                 </span>{" "}
                 <span className="font-mono text-xs">{shortHex(s.address)}</span>
                 <div className="text-xs text-slate-600">
-                  Ends {formatDate(s.validUntil)} ({formatRemaining(BigInt(s.validUntil), snap.now)})
+                  Ends {formatDate(s.validUntil)} (
+                  {formatRemaining(BigInt(s.validUntil), snap.now)})
                 </div>
               </div>
               {s.status === "active" ? (
@@ -85,7 +105,11 @@ export function Sessions() {
                 <Button
                   variant="secondary"
                   disabled={busy}
-                  onClick={() => void run("Delete session key", () => deleteSession(s.permissionId).then(() => undefined))}
+                  onClick={() =>
+                    void run("Delete session key", () =>
+                      deleteSession(s.permissionId).then(() => undefined),
+                    )
+                  }
                 >
                   Delete key
                 </Button>
@@ -99,7 +123,9 @@ export function Sessions() {
               variant="secondary"
               disabled={busy}
               testId="revoke-all"
-              onClick={() => void run("End all sessions", () => revokeSessions(account))}
+              onClick={() =>
+                void run("End all sessions", () => revokeSessions(account))
+              }
             >
               End all sessions
             </Button>

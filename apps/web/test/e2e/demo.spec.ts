@@ -18,10 +18,19 @@ const EXPECTED_MESSAGE: Record<(typeof ATTACKS)[number], RegExp> = {
 };
 
 const shot = async (page: Page, name: string) => {
-  if (SCREENSHOTS) await page.screenshot({ path: `${SCREENSHOTS}/${name}.png`, fullPage: true });
+  if (SCREENSHOTS)
+    await page.screenshot({
+      path: `${SCREENSHOTS}/${name}.png`,
+      fullPage: true,
+    });
 };
 
-test("onboard, session, buy, attack blocked, exit", async ({ page, context, request, baseURL }) => {
+test("onboard, session, buy, attack blocked, exit", async ({
+  page,
+  context,
+  request,
+  baseURL,
+}) => {
   const cdp = await context.newCDPSession(page);
   await cdp.send("WebAuthn.enable");
   await cdp.send("WebAuthn.addVirtualAuthenticator", {
@@ -39,17 +48,25 @@ test("onboard, session, buy, attack blocked, exit", async ({ page, context, requ
   const cspViolations: string[] = [];
   page.on("request", (r) => {
     const u = new URL(r.url());
-    if (u.hostname !== "localhost" && u.hostname !== "127.0.0.1") external.push(r.url());
+    if (u.hostname !== "localhost" && u.hostname !== "127.0.0.1")
+      external.push(r.url());
   });
   page.on("console", (m) => {
     if (/Content Security Policy/i.test(m.text())) cspViolations.push(m.text());
   });
 
-  const config = await (await request.get(`${baseURL}/runtime-config.json`)).json();
+  const config = await (
+    await request.get(`${baseURL}/runtime-config.json`)
+  ).json();
   const usdc: Address = config.deployment.market.usdc;
   const pub = createPublicClient({ transport: http(config.network.rpcUrl) });
   const usdcOf = (who: Address) =>
-    pub.readContract({ address: usdc, abi: erc20Abi, functionName: "balanceOf", args: [who] });
+    pub.readContract({
+      address: usdc,
+      abi: erc20Abi,
+      functionName: "balanceOf",
+      args: [who],
+    });
   const destination = privateKeyToAccount(generatePrivateKey()).address;
 
   // --- Onboard
@@ -60,8 +77,12 @@ test("onboard, session, buy, attack blocked, exit", async ({ page, context, requ
   await page.getByTestId("hourly-cap").fill("1000");
   await shot(page, "1-onboarding");
   await page.getByTestId("create-account").click();
-  await expect(page.getByTestId("account-address")).toBeVisible({ timeout: 180_000 });
-  const account = (await page.getByTestId("account-address").innerText()).trim() as Address;
+  await expect(page.getByTestId("account-address")).toBeVisible({
+    timeout: 180_000,
+  });
+  const account = (
+    await page.getByTestId("account-address").innerText()
+  ).trim() as Address;
   await expect(page.getByTestId("balance-usdc")).toHaveText("$10,000.00");
   await expect(page.getByTestId("summary-cap")).toHaveText("$1,000.00");
   expect(await usdcOf(account)).toBe(10_000_000_000n);
@@ -93,26 +114,47 @@ test("onboard, session, buy, attack blocked, exit", async ({ page, context, requ
   const usdcBefore = await usdcOf(account);
   await page.getByTestId("attack-toggle").check();
   await page.getByTestId("run-attack").click();
-  await expect(page.getByTestId("attack-verdict")).toBeVisible({ timeout: 180_000 });
+  await expect(page.getByTestId("attack-verdict")).toBeVisible({
+    timeout: 180_000,
+  });
   for (const id of ATTACKS) {
-    await expect(page.getByTestId(`attempt-${id}-status`), id).toHaveAttribute("data-status", "blocked");
-    await expect(page.getByTestId(`attempt-${id}-message`), id).toHaveText(EXPECTED_MESSAGE[id]);
-    await expect(page.getByTestId(`attempt-${id}`), id).toContainText("User operation: 0x");
+    await expect(page.getByTestId(`attempt-${id}-status`), id).toHaveAttribute(
+      "data-status",
+      "blocked",
+    );
+    await expect(page.getByTestId(`attempt-${id}-message`), id).toHaveText(
+      EXPECTED_MESSAGE[id],
+    );
+    await expect(page.getByTestId(`attempt-${id}`), id).toContainText(
+      "User operation: 0x",
+    );
   }
   // These reach the chain and revert in the hook; A9 from a session is refused at validation (D13).
   for (const id of ["A1", "A2", "A5", "A9-passkey"]) {
-    await expect(page.getByTestId(`attempt-${id}`), id).toContainText("Reverted transaction: 0x");
+    await expect(page.getByTestId(`attempt-${id}`), id).toContainText(
+      "Reverted transaction: 0x",
+    );
   }
-  await expect(page.getByTestId("attack-verdict")).toHaveText(/Your funds are unchanged/);
+  await expect(page.getByTestId("attack-verdict")).toHaveText(
+    /Your funds are unchanged/,
+  );
   await shot(page, "4-attack-blocked");
-  const attacker = (await page.getByTestId("attack-panel").locator("span.font-mono").first().innerText()).trim();
+  const attacker = (
+    await page
+      .getByTestId("attack-panel")
+      .locator("span.font-mono")
+      .first()
+      .innerText()
+  ).trim();
   expect(await usdcOf(attacker as Address)).toBe(0n);
   expect(await usdcOf(account)).toBe(usdcBefore);
   await page.getByTestId("attack-toggle").uncheck();
 
   // --- Settings: queue a loosening change with an ETA, cancel it, lower the cap
   await page.getByTestId("tab-settings").click();
-  await page.getByTestId("queue-destination").fill(privateKeyToAccount(generatePrivateKey()).address);
+  await page
+    .getByTestId("queue-destination")
+    .fill(privateKeyToAccount(generatePrivateKey()).address);
   await page.getByTestId("queue-destination-submit").click();
   await expect(page.getByTestId("pending-eta")).toContainText(/in 2[34] h/);
   await page.getByTestId("cancel-change").click();
@@ -125,7 +167,9 @@ test("onboard, session, buy, attack blocked, exit", async ({ page, context, requ
   await page.getByTestId("tab-trade").click();
   await page.getByTestId("amount-yes").fill("1900");
   await page.getByTestId("buy-yes").click();
-  await expect(page.getByTestId("outcome-error")).toContainText(/hourly budget is left/);
+  await expect(page.getByTestId("outcome-error")).toContainText(
+    /hourly budget is left/,
+  );
 
   // --- Freeze, then exit still works
   await page.getByTestId("tab-settings").click();
@@ -139,7 +183,9 @@ test("onboard, session, buy, attack blocked, exit", async ({ page, context, requ
 
   // --- RPC setting persists across reload; account is remembered
   await page.getByTestId("tab-network").click();
-  await page.getByTestId("rpc-url").fill(config.network.rpcUrl.replace("127.0.0.1", "localhost"));
+  await page
+    .getByTestId("rpc-url")
+    .fill(config.network.rpcUrl.replace("127.0.0.1", "localhost"));
   await page.getByTestId("save-network").click();
   await page.reload();
   await page.getByTestId("tab-network").click();

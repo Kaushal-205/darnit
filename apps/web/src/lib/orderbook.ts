@@ -4,9 +4,18 @@ import { type Address, type Hex, hashTypedData } from "viem";
 const ONE = 1_000_000n;
 
 /** EIP-712 order hash, identical to ReferenceMarket.hashOrder (domain "ReferenceMarket", version "1"). */
-export function orderHash(signed: SignedOrder, market: Address, chainId: number): Hex {
+export function orderHash(
+  signed: SignedOrder,
+  market: Address,
+  chainId: number,
+): Hex {
   return hashTypedData({
-    domain: { name: "ReferenceMarket", version: "1", chainId, verifyingContract: market },
+    domain: {
+      name: "ReferenceMarket",
+      version: "1",
+      chainId,
+      verifyingContract: market,
+    },
     types: {
       Order: [
         { name: "maker", type: "address" },
@@ -67,13 +76,21 @@ export function buildBook(
 }
 
 /** Best single maker order that can take the whole amount, or undefined. */
-export function pickLevel(book: Book, action: "buy" | "sell", shares: bigint): BookLevel | undefined {
+export function pickLevel(
+  book: Book,
+  action: "buy" | "sell",
+  shares: bigint,
+): BookLevel | undefined {
   const side = action === "buy" ? book.asks : book.bids;
   return side.find((l) => l.remaining >= shares);
 }
 
 /** USDC paid (buy, rounded up) or received (sell, rounded down), matching ReferenceMarket.fill. */
-export function fillCost(level: Pick<BookLevel, "price">, shares: bigint, action: "buy" | "sell"): bigint {
+export function fillCost(
+  level: Pick<BookLevel, "price">,
+  shares: bigint,
+  action: "buy" | "sell",
+): bigint {
   const n = shares * level.price;
   return action === "buy" ? (n + ONE - 1n) / ONE : n / ONE;
 }
@@ -82,7 +99,11 @@ export function fillCost(level: Pick<BookLevel, "price">, shares: bigint, action
  * Worst-case budget a fill uses (plan R4): a buy can lose everything paid; a sell gives up shares worth
  * at most $1 each, minus the USDC received.
  */
-export function worstCaseLoss(level: Pick<BookLevel, "price">, shares: bigint, action: "buy" | "sell"): bigint {
+export function worstCaseLoss(
+  level: Pick<BookLevel, "price">,
+  shares: bigint,
+  action: "buy" | "sell",
+): bigint {
   if (action === "buy") return fillCost(level, shares, "buy");
   const out = shares; // shares x $1, both in 6 decimals
   const received = fillCost(level, shares, "sell");

@@ -1,4 +1,8 @@
-import { type PasskeyOwner, type WebAuthnAuth, webAuthnOwner } from "@session-firewall/sdk";
+import {
+  type PasskeyOwner,
+  type WebAuthnAuth,
+  webAuthnOwner,
+} from "@session-firewall/sdk";
 import {
   type Address,
   type Hex,
@@ -8,7 +12,10 @@ import {
   size,
   stringToHex,
 } from "viem";
-import { createWebAuthnCredential, toWebAuthnAccount } from "viem/account-abstraction";
+import {
+  createWebAuthnCredential,
+  toWebAuthnAccount,
+} from "viem/account-abstraction";
 
 /** What we keep about the passkey: its id and public key. The private key never leaves the authenticator. */
 export type StoredPasskey = {
@@ -28,7 +35,8 @@ export async function createPasskey(label: string): Promise<StoredPasskey> {
   });
   const pk = credential.publicKey;
   const publicKey = size(pk) === 64 ? concat(["0x04", pk]) : pk;
-  if (size(publicKey) !== 65) throw new Error("The authenticator returned an unexpected key type.");
+  if (size(publicKey) !== 65)
+    throw new Error("The authenticator returned an unexpected key type.");
   return { id: credential.id, publicKey };
 }
 
@@ -37,7 +45,11 @@ export async function createPasskey(label: string): Promise<StoredPasskey> {
  * The SDK replaces its signature scalars with zero, so it can never validate.
  */
 export function stubAuthFor(origin: string, rpId: string): WebAuthnAuth {
-  const authenticatorData = concat([sha256(stringToHex(rpId)), "0x05", numberToHex(1, { size: 4 })]);
+  const authenticatorData = concat([
+    sha256(stringToHex(rpId)),
+    "0x05",
+    numberToHex(1, { size: 4 }),
+  ]);
   const challenge = bytesToBase64Url(new Uint8Array(32));
   const clientDataJSON = `{"type":"webauthn.get","challenge":"${challenge}","origin":"${origin}","crossOrigin":false}`;
   return {
@@ -57,7 +69,10 @@ function bytesToBase64Url(b: Uint8Array): string {
 }
 
 /** The account owner for SDK calls: every signature is a fresh passkey prompt (D12 envelope). */
-export function passkeyOwnerFor(passkey: StoredPasskey, validator: Address): PasskeyOwner {
+export function passkeyOwnerFor(
+  passkey: StoredPasskey,
+  validator: Address,
+): PasskeyOwner {
   return webAuthnOwner({
     validator,
     credential: toWebAuthnAccount({

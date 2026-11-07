@@ -13,11 +13,22 @@ import { existsSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ORDER_SIDE, type SignedOrder, signReferenceOrder } from "@session-firewall/sdk";
+import {
+  ORDER_SIDE,
+  type SignedOrder,
+  signReferenceOrder,
+} from "@session-firewall/sdk";
 import { http, createPublicClient, defineChain } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { ANVIL_KEYS, LOCAL_CHAIN_ID, deployAll } from "../../../packages/sdk/scripts/local-env.ts";
-import { type RuntimeConfig, serializeRuntimeConfig } from "../src/lib/config.ts";
+import {
+  ANVIL_KEYS,
+  LOCAL_CHAIN_ID,
+  deployAll,
+} from "../../../packages/sdk/scripts/local-env.ts";
+import {
+  type RuntimeConfig,
+  serializeRuntimeConfig,
+} from "../src/lib/config.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const webDir = join(here, "..");
@@ -25,7 +36,8 @@ const outDir = join(webDir, "out");
 const repoRoot = join(webDir, "../..");
 
 const FORK_URLS = (
-  process.env.FORK_URLS ?? "https://ethereum-sepolia-rpc.publicnode.com,https://sepolia.drpc.org"
+  process.env.FORK_URLS ??
+  "https://ethereum-sepolia-rpc.publicnode.com,https://sepolia.drpc.org"
 )
   .split(",")
   .filter(Boolean);
@@ -41,13 +53,20 @@ function foundry(name: string): string {
   return existsSync(p) ? p : name;
 }
 
-async function rpc(url: string, method: string, params: unknown[] = []): Promise<unknown> {
+async function rpc(
+  url: string,
+  method: string,
+  params: unknown[] = [],
+): Promise<unknown> {
   const r = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
   });
-  const j = (await r.json()) as { result?: unknown; error?: { message: string } };
+  const j = (await r.json()) as {
+    result?: unknown;
+    error?: { message: string };
+  };
   if (j.error) throw new Error(`${method}: ${j.error.message}`);
   return j.result;
 }
@@ -88,7 +107,9 @@ async function startAnvil(): Promise<{ proc: ChildProcess; url: string }> {
     proc.kill();
     console.error(`Could not fork from ${forkUrl}, trying the next RPC.`);
   }
-  throw new Error("Could not start an Anvil fork of Ethereum Sepolia. Set FORK_URLS to a working RPC.");
+  throw new Error(
+    "Could not start an Anvil fork of Ethereum Sepolia. Set FORK_URLS to a working RPC.",
+  );
 }
 
 /** The public dev keys carry EIP-7702 delegations on Sepolia, which break the fixtures' ERC-1155 receive check. */
@@ -129,30 +150,43 @@ async function signOrders(
       signReferenceOrder(maker, {
         market: fx.market,
         chainId: LOCAL_CHAIN_ID,
-        order: { tokenId: BigInt(tokenId), side, price, amount, expiry, salt: BigInt(i + 1) },
+        order: {
+          tokenId: BigInt(tokenId),
+          side,
+          price,
+          amount,
+          expiry,
+          salt: BigInt(i + 1),
+        },
       }),
     ),
   );
 }
 
-let anvil: ChildProcess | undefined;
+const running: { anvil?: ChildProcess } = {};
 const stop = () => {
-  anvil?.kill();
+  running.anvil?.kill();
   process.exit(0);
 };
 process.on("SIGINT", stop);
 process.on("SIGTERM", stop);
-process.on("exit", () => anvil?.kill());
+process.on("exit", () => running.anvil?.kill());
 
 if (process.env.REBUILD === "1" || !existsSync(join(outDir, "index.html"))) {
   console.log("Building the SDK and the web app…");
-  execFileSync("pnpm", ["--filter", "@session-firewall/sdk", "build"], { cwd: repoRoot, stdio: "inherit" });
-  execFileSync("pnpm", ["--filter", "@session-firewall/web", "build"], { cwd: repoRoot, stdio: "inherit" });
+  execFileSync("pnpm", ["--filter", "@session-firewall/sdk", "build"], {
+    cwd: repoRoot,
+    stdio: "inherit",
+  });
+  execFileSync("pnpm", ["--filter", "@session-firewall/web", "build"], {
+    cwd: repoRoot,
+    stdio: "inherit",
+  });
 }
 
 console.log(`Forking Ethereum Sepolia at block ${FORK_BLOCK}…`);
 const started = await startAnvil();
-anvil = started.proc;
+running.anvil = started.proc;
 await clearDevKeyCode(started.url);
 console.log("Deploying contracts and fixtures (about a minute)…");
 const fromBlock = BigInt((await rpc(started.url, "eth_blockNumber")) as string);
@@ -182,10 +216,15 @@ const config: RuntimeConfig = {
   local: { bundlerPrivateKey: ANVIL_KEYS.bundler, faucet: true },
 };
 // Written to the served folder only: the source runtime-config.json stays the public default.
-writeFileSync(join(outDir, "runtime-config.json"), serializeRuntimeConfig(config));
+writeFileSync(
+  join(outDir, "runtime-config.json"),
+  serializeRuntimeConfig(config),
+);
 
 const { serve } = (await import("./serve.mjs" as string)) as {
   serve: (o: { dir: string; port: number }) => Promise<unknown>;
 };
 await serve({ dir: outDir, port: PORT });
-console.log(`\nDemo ready: http://localhost:${PORT}\nRPC: ${started.url}. Press Ctrl+C to stop.`);
+console.log(
+  `\nDemo ready: http://localhost:${PORT}\nRPC: ${started.url}. Press Ctrl+C to stop.`,
+);

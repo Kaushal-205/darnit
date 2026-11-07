@@ -20,17 +20,26 @@ export const ALLOWED_TEXT_ORIGINS = {
   "http://n": "Next.js internal URL parsing base, never requested",
   "http://127.0.0.1": "this machine (local demo RPC), never third-party",
   "http://a.com": "URL parsing feature test in a polyfill, never requested",
-  "https://a": "URL parsing feature test in the polyfill chunk, never requested",
-  "https://x": "URL parsing feature test in the polyfill chunk, never requested",
+  "https://a":
+    "URL parsing feature test in the polyfill chunk, never requested",
+  "https://x":
+    "URL parsing feature test in the polyfill chunk, never requested",
   "http://f": "URL parsing placeholder in Next.js main chunk, never requested",
-  "http://.": "fragment of a URL-matching regular expression in viem, not a URL",
-  "https://ipfs.io": "viem ENS avatar gateway default; the app never calls getEnsAvatar",
-  "https://arweave.net": "viem ENS avatar gateway default; the app never calls getEnsAvatar",
-  "https://4byte.sourcify.dev": "link printed in viem error messages, never requested",
-  "https://docs.soliditylang.org": "link printed in viem error messages, never requested",
+  "http://.":
+    "fragment of a URL-matching regular expression in viem, not a URL",
+  "https://ipfs.io":
+    "viem ENS avatar gateway default; the app never calls getEnsAvatar",
+  "https://arweave.net":
+    "viem ENS avatar gateway default; the app never calls getEnsAvatar",
+  "https://4byte.sourcify.dev":
+    "link printed in viem error messages, never requested",
+  "https://docs.soliditylang.org":
+    "link printed in viem error messages, never requested",
   "https://tailwindcss.com": "license comment in the compiled stylesheet",
-  "https://ethereum-sepolia-rpc.publicnode.com": "connect: default RPC in runtime-config.json",
-  "https://sepolia.etherscan.io": "connect: explorer link base in runtime-config.json",
+  "https://ethereum-sepolia-rpc.publicnode.com":
+    "connect: default RPC in runtime-config.json",
+  "https://sepolia.etherscan.io":
+    "connect: explorer link base in runtime-config.json",
 };
 
 const URL_RE = /\b(?:https?|wss?):\/\/[a-zA-Z0-9.-]+(?::\d+)?/g;
@@ -49,7 +58,9 @@ const STYLE_RES = [
 /** @returns {{ file: string, url: string, reason: string }[]} */
 export function scanText(file, text, allowed = ALLOWED_TEXT_ORIGINS) {
   const problems = [];
-  const res = /\.(css|html)$/.test(file) ? [...LOADING_RES, ...STYLE_RES] : LOADING_RES;
+  const res = /\.(css|html)$/.test(file)
+    ? [...LOADING_RES, ...STYLE_RES]
+    : LOADING_RES;
   for (const re of res) {
     for (const m of text.matchAll(re))
       problems.push({ file, url: m[1], reason: "loaded by the browser" });
@@ -57,7 +68,11 @@ export function scanText(file, text, allowed = ALLOWED_TEXT_ORIGINS) {
   for (const m of text.matchAll(URL_RE)) {
     const origin = m[0].replace(/:\d+$/, "");
     if (!Object.hasOwn(allowed, origin))
-      problems.push({ file, url: m[0], reason: "not on the reviewed allowlist" });
+      problems.push({
+        file,
+        url: m[0],
+        reason: "not on the reviewed allowlist",
+      });
   }
   return problems;
 }

@@ -1,5 +1,15 @@
-import { ChangeKind, type FirewallClientConfig, firewallModuleAbi } from "@session-firewall/sdk";
-import { type Address, type Hex, decodeAbiParameters, getAbiItem, parseAbiParameters } from "viem";
+import {
+  ChangeKind,
+  type FirewallClientConfig,
+  firewallModuleAbi,
+} from "@session-firewall/sdk";
+import {
+  type Address,
+  type Hex,
+  decodeAbiParameters,
+  getAbiItem,
+  parseAbiParameters,
+} from "viem";
 import { formatUsd } from "./format";
 
 export type PendingChange = {
@@ -19,7 +29,10 @@ export function describeChange(kind: number, data: Hex): string {
         return `Add withdrawal address ${a}`;
       }
       case ChangeKind.AddMarket: {
-        const [m] = decodeAbiParameters(parseAbiParameters("address, address"), data);
+        const [m] = decodeAbiParameters(
+          parseAbiParameters("address, address"),
+          data,
+        );
         return `Add market ${m}`;
       }
       case ChangeKind.AddToken: {
@@ -33,7 +46,10 @@ export function describeChange(kind: number, data: Hex): string {
       case ChangeKind.Unfreeze:
         return "Resume trading (undo pause)";
       case ChangeKind.ConfigCall: {
-        const [target] = decodeAbiParameters(parseAbiParameters("address, uint256, bytes"), data);
+        const [target] = decodeAbiParameters(
+          parseAbiParameters("address, uint256, bytes"),
+          data,
+        );
         return `Advanced settings call to ${target}`;
       }
     }
@@ -43,7 +59,10 @@ export function describeChange(kind: number, data: Hex): string {
   return `Unknown change (kind ${kind})`;
 }
 
-const changeQueued = getAbiItem({ abi: firewallModuleAbi, name: "ChangeQueued" });
+const changeQueued = getAbiItem({
+  abi: firewallModuleAbi,
+  name: "ChangeQueued",
+});
 
 /** Changes still waiting in the 24-hour queue (queued, not executed or cancelled). */
 export async function listPendingChanges(
@@ -59,7 +78,9 @@ export async function listPendingChanges(
     fromBlock,
     toBlock: "latest",
   });
-  const ids = [...new Set(logs.map((l) => l.args.id).filter((x): x is Hex => !!x))];
+  const ids = [
+    ...new Set(logs.map((l) => l.args.id).filter((x): x is Hex => !!x)),
+  ];
   const states = await Promise.all(
     ids.map((id) =>
       publicClient.readContract({
