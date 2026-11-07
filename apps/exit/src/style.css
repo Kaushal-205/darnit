@@ -1,0 +1,130 @@
+:root {
+  color-scheme: light dark;
+  --fg: #1b1d21;
+  --muted: #5b6270;
+  --bg: #ffffff;
+  --panel: #f4f5f7;
+  --line: #d7dae0;
+  --accent: #1f5fd6;
+  --bad: #b3261e;
+  --good: #1e7a3c;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.5;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fg: #e6e8ec;
+    --muted: #a0a7b4;
+    --bg: #14161a;
+    --panel: #1d2026;
+    --line: #343944;
+    --accent: #7aa7ff;
+    --bad: #ff8a80;
+    --good: #7bd88f;
+  }
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+}
+main {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+h1 {
+  margin-top: 0;
+}
+section {
+  border-top: 1px solid var(--line);
+  padding-top: 0.5rem;
+  margin-top: 1.5rem;
+}
+.lead {
+  font-size: 1.05rem;
+}
+.note,
+small {
+  color: var(--muted);
+}
+small {
+  display: block;
+}
+label {
+  display: block;
+  margin: 0.75rem 0;
+}
+label.inline {
+  margin: 0.25rem 0;
+}
+input[type="text"],
+input[type="url"],
+input[type="password"],
+select,
+textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.25rem;
+  padding: 0.5rem;
+  font: inherit;
+  color: inherit;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+textarea,
+pre,
+code,
+#balances td:last-child,
+#destinations,
+dd {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+pre {
+  background: var(--panel);
+  padding: 0.75rem;
+  border-radius: 6px;
+  white-space: pre-wrap;
+}
+fieldset {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  margin: 0.75rem 0;
+}
+button {
+  font: inherit;
+  padding: 0.6rem 1rem;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+td {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+td:last-child {
+  text-align: right;
+}
+.status {
+  min-height: 1.5rem;
+}
+.status.bad {
+  color: var(--bad);
+}
+.status.good {
+  color: var(--good);
+}
