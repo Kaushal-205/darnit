@@ -151,6 +151,7 @@ function forgeScript(
       "--private-key",
       ANVIL_KEYS.deployer,
       "--slow",
+      "--start-fresh", // a crashed earlier run must not block a new fork
       ...extra,
     ],
     {
