@@ -18,12 +18,18 @@ via_ir = false
 runs = 1_000
 
 [invariant]
-runs = 256
-depth = 64
+runs = 32
+depth = 32
 fail_on_revert = false
 
 [profile.ci.fuzz]
 runs = 10_000
+
+# M3 acceptance: 10,000+ runs per invariant (docs/decisions.md, "M3 results").
+[profile.ci.invariant]
+runs = 10_000
+depth = 32
+fail_on_revert = false
 
 [fmt]
 line_length = 110
